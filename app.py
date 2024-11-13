@@ -21,22 +21,14 @@ db = mysql.connector.connect(
 # Function to fetch fingerprints from the database
 def get_fingerprints_from_database(user_id):
     cursor = db.cursor()
-    query = 'SELECT id, name FROM users WHERE pin = %s'
-    cursor.execute(query, (user_id,))
+    query_fingerprint = 'SELECT id, user_id, img_1, img_2, img_3 FROM biometrics_data WHERE user_id = %s'
+    cursor.execute(query_fingerprint, (user_id,))
     results = cursor.fetchall()
     # print(results)
     if results:
         fingerprints = results[0]
         if fingerprints[0] > 0:  # Checking if the user exists
-            query_fingerprint = 'SELECT id, user_id, img_1, img_2, img_3 FROM biometrics_data WHERE user_id = %s'
-            cursor.execute(query_fingerprint, (fingerprints[0],))
-            results_fingerprint = cursor.fetchall()
-
-            if results_fingerprint:
-                fingerprints_data = results_fingerprint[0]  # Only return the first match
-                return fingerprints_data
-            else:
-                raise Exception("No biometrics data found for this user")
+            return fingerprints[0]
         else:
             raise Exception("User not found")
     else:
@@ -170,12 +162,12 @@ def compare():
     try:
         # Get the incoming data from the request body
         data = request.get_json()
-        pin = data['PIN']
+        user_id = data['user_id']
         biometrics_capture = data['biometrics_capture']
         
 
         # Get the user's fingerprint data from the database
-        fingerprints_data = get_fingerprints_from_database(pin);
+        fingerprints_data = get_fingerprints_from_database(user_id);
 
         fingerprint1 = fingerprints_data[2]
         fingerprint2 = fingerprints_data[3]
