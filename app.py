@@ -4,7 +4,7 @@ import mysql.connector
 import numpy as np
 # import fingerprint_feature_extractor
 # import fingerprint_enhancer
-from scipy.spatial.distance import cdist
+# from scipy.spatial.distance import cdist
 # import cv2
 
 app = Flask(__name__)
