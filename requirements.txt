@@ -6,7 +6,7 @@ colorama==0.4.5
 # contourpy
 # cycler==0.12.1
 Flask==2.0.3
-Flask-MySQLdb==2.0.0
+Flask-MySQLdb==1.0.1
 fonttools==4.54.1
 idna==3.7
 imageio==2.36.0
