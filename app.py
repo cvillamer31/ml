@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify
 import base64
 import mysql.connector
-import cv2
 import numpy as np
 import fingerprint_feature_extractor
 import fingerprint_enhancer
 from scipy.spatial.distance import cdist
+import cv2
 
 app = Flask(__name__)
 
