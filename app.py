@@ -204,9 +204,11 @@ def compare():
         # matches = compare_minutiae(db_minutiae_data, incoming_minutiae_data)
         if match_minutiae(db_minutiae_data, incoming_minutiae_data):
             print("Fingerprints match!")
+            return match_minutiae(db_minutiae_data, incoming_minutiae_data)
         else:
             print("Fingerprints do not match.")
-        return jsonify("Done")
+            return match_minutiae(db_minutiae_data, incoming_minutiae_data)
+        
 
     except Exception as e:
         return jsonify({'error': str(e)})
