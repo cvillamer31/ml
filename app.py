@@ -42,6 +42,25 @@ def get_fingerprints_from_database(user_id):
     else:
         raise Exception("User not found")
 
+
+def get_user_from_database(pin):
+    # cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
+    query = 'SELECT * FROM users WHERE pin = %s'
+    cursor.execute(query, (pin,))
+    results = cursor.fetchall()
+
+    if results:
+        fingerprints = {
+            'id': results[0]['id'],
+            'name': results[0]['name'],
+            'email': results[0]['email'],
+            'image': results[0]['image']
+        }
+        return fingerprints
+    else:
+        raise Exception("User not found")
+
 # //////////////////////new
 def decode_base64_image(base64_str):
     # Strip the "data:image/png;base64," prefix
@@ -191,6 +210,19 @@ def compare():
 
     except Exception as e:
         return jsonify({'error': str(e)})
+    
+
+
+@app.route('/get_userinfo', methods=['POST'])
+def get_userinfo():
+    try:
+        data = request.get_json()
+        pin = data['PIN']
+        fingerprints_data = get_user_from_database(pin);
+        return jsonify(fingerprints_data)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+    
 
 if __name__ == '__main__':
     app.run(debug=True, port=5012)
