@@ -14,7 +14,7 @@ imageio==2.16.0
 imutils==0.5.4
 itsdangerous==2.0.1
 Jinja2==3.0.3
-joblib==1.4.2
+joblib==1.1.1
 jsonify==0.5
 kiwisolver==1.4.7
 lazy_loader==0.4
