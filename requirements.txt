@@ -5,7 +5,7 @@ click==8.0.4
 colorama==0.4.5
 # contourpy
 # cycler==0.12.1
-Flask==3.0.3
+Flask==2.0.3
 Flask-MySQLdb==2.0.0
 fonttools==4.54.1
 idna==3.7
