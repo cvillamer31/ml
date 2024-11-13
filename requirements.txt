@@ -37,4 +37,5 @@ threadpoolctl
 tifffile
 urllib3
 Werkzeug
+skbuild
 opencv-python
