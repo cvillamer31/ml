@@ -12,7 +12,7 @@ fonttools==4.27.1
 idna==3.7
 imageio==2.16.0
 imutils==0.5.4
-itsdangerous==2.2.0
+itsdangerous==2.0.1
 Jinja2==3.1.4
 joblib==1.4.2
 jsonify==0.5
