@@ -28,7 +28,7 @@ def get_fingerprints_from_database(user_id):
     if results:
         fingerprints = results[0]
         if fingerprints[0] > 0:  # Checking if the user exists
-            return fingerprints[0]
+            return fingerprints
         else:
             raise Exception("User not found")
     else:
@@ -196,10 +196,10 @@ def compare():
         # matches = compare_minutiae(db_minutiae_data, incoming_minutiae_data)
         if match_minutiae(db_minutiae_data, incoming_minutiae_data):
             print("Fingerprints match!")
-            return match_minutiae(db_minutiae_data, incoming_minutiae_data)
+            return jsonify({'message': 'Fingerprints match!', 'type': "true" }), 200
         else:
             print("Fingerprints do not match.")
-            return match_minutiae(db_minutiae_data, incoming_minutiae_data)
+            return jsonify({'message': 'Fingerprints do not match.', 'type': "false" }), 200
         
 
     except Exception as e:
