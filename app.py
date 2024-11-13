@@ -22,7 +22,7 @@ db = mysql.connector.connect(
 def get_fingerprints_from_database(user_id):
     cursor = db.cursor()
     query_fingerprint = 'SELECT id, user_id, img_1, img_2, img_3 FROM biometrics_data WHERE user_id = %s'
-    cursor.execute(query_fingerprint, (str(user_id),))
+    cursor.execute(query_fingerprint, (user_id,))
     results = cursor.fetchall()
     # print(results)
     if results:
