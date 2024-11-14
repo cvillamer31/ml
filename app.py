@@ -21,7 +21,7 @@ db = mysql.connector.connect(
 # Function to fetch fingerprints from the database
 def get_fingerprints_from_database(user_id):
     cursor = db.cursor()
-    query_fingerprint = 'SELECT id, user_id, img_1, img_2, img_3 FROM biometrics_data WHERE user_id = %s'
+    query_fingerprint = 'SELECT id, user_id, img_1, img_2, img_3, img_4, img_5 FROM biometrics_data WHERE user_id = %s'
     cursor.execute(query_fingerprint, (user_id,))
     results = cursor.fetchall()
     # print(results)
@@ -144,7 +144,7 @@ def match_minutiae(db_data, user_data):
     distances = cdist(db_coords, user_coords)
     # print(distances)
     # Set a threshold for matching (adjust as needed)
-    threshold = 10  # Adjust this based on your specific requirements
+    threshold = 6  # Adjust this based on your specific requirements
 
     # Find the number of matches within the threshold
     num_matches = np.sum(distances < threshold)
@@ -172,8 +172,10 @@ def compare():
         fingerprint1 = fingerprints_data[2]
         fingerprint2 = fingerprints_data[3]
         fingerprint3 = fingerprints_data[4]
-
-        base64_strings = [fingerprint1, fingerprint2, fingerprint3]
+        fingerprint4 = fingerprints_data[5]
+        fingerprint5 = fingerprints_data[6]
+        # print(fingerprint4)
+        base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
 
 
         extract_min_db = from_db_minutiae(base64_strings);
@@ -192,7 +194,7 @@ def compare():
                 incoming_minutiae_data.append(extract_feature_data(termination))
             for bifurcation in incoming_fingerprint['bifurcations']:
                 incoming_minutiae_data.append(extract_feature_data(bifurcation))
-                
+        # print(incoming_bio_min)
         # matches = compare_minutiae(db_minutiae_data, incoming_minutiae_data)
         if match_minutiae(db_minutiae_data, incoming_minutiae_data):
             print("Fingerprints match!")
@@ -200,7 +202,7 @@ def compare():
         else:
             print("Fingerprints do not match.")
             return jsonify({'message': 'Fingerprints do not match.', 'type': "false" }), 200
-        
+
 
     except Exception as e:
         return jsonify({'error': str(e)})
@@ -219,4 +221,4 @@ def get_userinfo():
     
 
 if __name__ == '__main__':
-    app.run(debug=False, port=5012)
+    app.run(debug=True, port=5012)
