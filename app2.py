@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import base64
 import mysql.connector
 import numpy as np
@@ -6,7 +7,7 @@ from scipy.spatial.distance import cdist
 import cv2
 import matching_fingerprint
 app = Flask(__name__)
-
+CORS(app)
 # Set up MySQL connection
 db = mysql.connector.connect(
     host="172.105.116.65",
@@ -51,6 +52,14 @@ def get_user_from_database(pin):
     else:
         raise Exception("User not found")
 
+def get_locations():
+    cursor = db.cursor(dictionary=True)
+    query = 'SELECT id, name address FROM areas'
+    cursor.execute(query)
+    results = cursor.fetchall()
+    if results:
+        data = results
+    return data
 @app.route('/compare', methods=['POST'])
 def compare():
     try:
@@ -94,6 +103,18 @@ def get_userinfo():
         pin = data['PIN']
         fingerprints_data = get_user_from_database(pin);
         return jsonify(fingerprints_data)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+    
+
+
+@app.route('/get_all_companies', methods=['GET'])
+def get_all_companies():
+    try:
+        # data = request.get_json()
+        # pin = data['PIN']
+        all_location = get_locations();
+        return jsonify(all_location)
     except Exception as e:
         return jsonify({'error': str(e)})
     
