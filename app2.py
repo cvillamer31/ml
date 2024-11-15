@@ -7,7 +7,7 @@ from scipy.spatial.distance import cdist
 import cv2
 import matching_fingerprint
 app = Flask(__name__)
-CORS(app, resources={{"origins": "*"}})
+CORS(app, resources={r"/": {"origins": "*"}})
 
 
 # Set up MySQL connection
