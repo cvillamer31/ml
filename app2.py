@@ -7,8 +7,8 @@ from scipy.spatial.distance import cdist
 import cv2
 import matching_fingerprint
 app = Flask(__name__)
-CORS(app, resources={r"/compare": {"origins": "*"}})
-CORS(app, resources={r"/get_userinfo": {"origins": "*"}})
+CORS(app, resources={r"/compare": {"origins": "*"}}, max_age=3600)
+CORS(app, resources={r"/get_userinfo": {"origins": "*"}}, max_age=3600)
 
 # Set up MySQL connection
 # db = mysql.connector.connect(
@@ -83,8 +83,15 @@ def get_locations():
     if results:
         data = results
     return data
-@app.route('/compare', methods=['POST'])
+@app.route('/compare', methods=['POST', 'OPTIONS'])
 def compare():
+
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
     try:
         # Get the incoming data from the request body
         data = request.get_json()
