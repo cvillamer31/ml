@@ -6,6 +6,7 @@ import numpy as np
 from scipy.spatial.distance import cdist
 import cv2
 import matching_fingerprint
+import asyncio
 app = Flask(__name__)
 # CORS(app, supports_credentials=False, max_age=86400)  # 86400 seconds = 1 day
 # CORS(app, resources={r"/compare": {"origins": "*", "methods": ["POST"]}})
@@ -87,7 +88,7 @@ def get_locations():
         data = results
     return data
 @app.route('/compare', methods=['POST', 'OPTIONS'])
-def compare():
+async def compare():
 
     if request.method == 'OPTIONS':
         response = jsonify({"status": "OK"})
@@ -116,7 +117,7 @@ def compare():
             match_scores_all = []
             for a in base64_strings:
                 # data2 = incoming_minutiae(a)
-                match_score = matching_fingerprint.fingerprints_matching(biometrics_capture, a)
+                match_score = await matching_fingerprint.fingerprints_matching(biometrics_capture, a)
                 match_scores_all.append(match_score)
                 print((match_score*100))
             total_score = sum(match_scores_all) * 100
