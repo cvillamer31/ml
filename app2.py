@@ -7,8 +7,9 @@ from scipy.spatial.distance import cdist
 import cv2
 import matching_fingerprint
 app = Flask(__name__)
-CORS(app, resources={r"/compare": {"origins": "*"}}, max_age=3600)
-CORS(app, resources={r"/get_userinfo": {"origins": "*"}}, max_age=3600)
+CORS(app, supports_credentials=False, max_age=86400)  # 86400 seconds = 1 day
+CORS(app, resources={r"/compare": {"origins": "*"}})
+CORS(app, resources={r"/get_userinfo": {"origins": "*"}})
 
 # Set up MySQL connection
 # db = mysql.connector.connect(
