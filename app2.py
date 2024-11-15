@@ -7,7 +7,7 @@ from scipy.spatial.distance import cdist
 import cv2
 import matching_fingerprint
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/compare": {"origins": "*"}})
 
 
 # Set up MySQL connection
@@ -115,7 +115,7 @@ def compare():
     
 
     except Exception as e:
-        return jsonify({'error': str(e)})
+        return jsonify({'error': str(e)}), 500
     
 
 
