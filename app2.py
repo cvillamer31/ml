@@ -157,4 +157,4 @@ def get_all_companies():
     
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5012)
+    app.run(debug=False, port=5012)
