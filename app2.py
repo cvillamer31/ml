@@ -10,6 +10,7 @@ app = Flask(__name__)
 CORS(app, supports_credentials=False, max_age=86400)  # 86400 seconds = 1 day
 CORS(app, resources={r"/compare": {"origins": "*", "methods": ["POST"]}})
 CORS(app, resources={r"/get_userinfo": {"origins": "*", "methods": ["POST"]}})
+app.config['CORS_HEADERS'] = 'application/json'
 
 # Set up MySQL connection
 # db = mysql.connector.connect(
@@ -93,37 +94,38 @@ def compare():
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
         response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
         return response, 200
-    try:
-        # Get the incoming data from the request body
-        data = request.get_json()
-        user_id = data['user_id']
-        biometrics_capture = data['biometrics_capture']
-        
+    if request.method == 'POST':
+        try:
+            # Get the incoming data from the request body
+            data = request.get_json()
+            user_id = data['user_id']
+            biometrics_capture = data['biometrics_capture']
+            
 
-        # Get the user's fingerprint data from the database
-        fingerprints_data = get_fingerprints_from_database(user_id);
+            # Get the user's fingerprint data from the database
+            fingerprints_data = get_fingerprints_from_database(user_id);
 
-        fingerprint1 = fingerprints_data[2]
-        fingerprint2 = fingerprints_data[3]
-        fingerprint3 = fingerprints_data[4]
-        fingerprint4 = fingerprints_data[5]
-        fingerprint5 = fingerprints_data[6]
-        # print(fingerprint4)
-        base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
-        match_scores_all = []
-        for a in base64_strings:
-            # data2 = incoming_minutiae(a)
-            match_score = matching_fingerprint.fingerprints_matching(biometrics_capture, a)
-            match_scores_all.append(match_score)
-            print((match_score*100))
-        total_score = sum(match_scores_all) * 100
-        average_score = total_score / len(match_scores_all)
+            fingerprint1 = fingerprints_data[2]
+            fingerprint2 = fingerprints_data[3]
+            fingerprint3 = fingerprints_data[4]
+            fingerprint4 = fingerprints_data[5]
+            fingerprint5 = fingerprints_data[6]
+            # print(fingerprint4)
+            base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
+            match_scores_all = []
+            for a in base64_strings:
+                # data2 = incoming_minutiae(a)
+                match_score = matching_fingerprint.fingerprints_matching(biometrics_capture, a)
+                match_scores_all.append(match_score)
+                print((match_score*100))
+            total_score = sum(match_scores_all) * 100
+            average_score = total_score / len(match_scores_all)
 
-        return jsonify({'total_score_percent': total_score, 'average_percent': average_score }), 200
+            return jsonify({'total_score_percent': total_score, 'average_percent': average_score }), 200
     
 
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
     
 
 
@@ -135,13 +137,14 @@ def get_userinfo():
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
         response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
         return response, 200
-    try:
-        data = request.get_json()
-        pin = data['PIN']
-        fingerprints_data = get_user_from_database(pin);
-        return jsonify(fingerprints_data)
-    except Exception as e:
-        return jsonify({'error': str(e)})
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            pin = data['PIN']
+            fingerprints_data = get_user_from_database(pin);
+            return jsonify(fingerprints_data)
+        except Exception as e:
+            return jsonify({'error': str(e)})
     
 
 
