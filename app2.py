@@ -8,8 +8,8 @@ import cv2
 import matching_fingerprint
 app = Flask(__name__)
 CORS(app, supports_credentials=False, max_age=86400)  # 86400 seconds = 1 day
-CORS(app, resources={r"/compare": {"origins": "*", "methods": ["POST"]}})
-CORS(app, resources={r"/get_userinfo": {"origins": "*", "methods": ["POST"]}})
+# CORS(app, resources={r"/compare": {"origins": "*", "methods": ["POST"]}})
+# CORS(app, resources={r"/get_userinfo": {"origins": "*", "methods": ["POST"]}})
 app.config['CORS_HEADERS'] = 'application/json'
 
 # Set up MySQL connection
