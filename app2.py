@@ -115,7 +115,7 @@ def compare():
             # data2 = incoming_minutiae(a)
             match_score = matching_fingerprint.fingerprints_matching(biometrics_capture, a)
             match_scores_all.append(match_score)
-            print(match_score)
+            print((match_score*100))
         total_score = sum(match_scores_all) * 100
         average_score = total_score / len(match_scores_all)
 
