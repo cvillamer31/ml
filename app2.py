@@ -24,7 +24,7 @@ app.config['CORS_HEADERS'] = 'application/json'
 # )
 
 db_config = {
-    'host': "127.0.0.1",
+    'host': "172.105.116.65",
     'user': "philstud_ml",
     'password': "Rk88j;OcQ8f3",
     'database': "philstud_biomentrics",

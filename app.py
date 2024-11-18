@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 import base64
 import mysql.connector
 import numpy as np
@@ -6,20 +6,34 @@ import fingerprint_feature_extractor
 import fingerprint_enhancer
 from scipy.spatial.distance import cdist
 import cv2
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, origins=["https://biometric.iteklabs.tech"])
+app.config['CORS_HEADERS'] = 'application/json'
 
 # Set up MySQL connection
-db = mysql.connector.connect(
-    host="172.105.116.65",
-    user="philstud_ml",
-    password="Rk88j;OcQ8f3",
-    database="philstud_biomentrics",
-    ssl_disabled=True  # Disable SSL if not required
-)
+db_config = {
+    'host': "172.105.116.65",
+    'user': "philstud_ml",
+    'password': "Rk88j;OcQ8f3",
+    'database': "philstud_biomentrics",
+    'ssl_disabled': True  # Disable SSL if not required
+}
+
+def get_db_connection():
+    if 'db' not in g:
+        g.db = mysql.connector.connect(**db_config)
+    else:
+        try:
+            g.db.ping(reconnect=True, attempts=3, delay=5)
+        except mysql.connector.Error:
+            g.db = mysql.connector.connect(**db_config)
+    return g.db
 
 # Function to fetch fingerprints from the database
 def get_fingerprints_from_database(user_id):
+    db = get_db_connection()
     cursor = db.cursor()
     query_fingerprint = 'SELECT id, user_id, img_1, img_2, img_3, img_4, img_5 FROM biometrics_data WHERE user_id = %s'
     cursor.execute(query_fingerprint, (user_id,))
@@ -37,6 +51,7 @@ def get_fingerprints_from_database(user_id):
 
 def get_user_from_database(pin):
     # cursor = db.cursor()
+    db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     query = 'SELECT * FROM users WHERE pin = %s'
     cursor.execute(query, (pin,))
