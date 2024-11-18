@@ -257,15 +257,22 @@ def get_userinfo():
             return jsonify({'error': str(e)})
         
 
-@app.route('/get_all_companies', methods=['GET'])
+@app.route('/get_all_companies', methods=['GET', 'OPTIONS'])
 def get_all_companies():
-    try:
-        # data = request.get_json()
-        # pin = data['PIN']
-        all_location = get_locations();
-        return jsonify(all_location)
-    except Exception as e:
-        return jsonify({'error': str(e)})
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+    if request.method == 'POST':
+        try:
+            # data = request.get_json()
+            # pin = data['PIN']
+            all_location = get_locations();
+            return jsonify(all_location)
+        except Exception as e:
+            return jsonify({'error': str(e)})
     
 
 
