@@ -172,68 +172,80 @@ def match_minutiae(db_data, user_data):
 
     return match_score >= match_threshold
 
-@app.route('/compare', methods=['POST'])
+@app.route('/compare', methods=['POST', 'OPTIONS'])
 def compare():
-    try:
-        # Get the incoming data from the request body
-        data = request.get_json()
-        user_id = data['user_id']
-        biometrics_capture = data['biometrics_capture']
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+    if request.method == 'POST':
+        try:
+            # Get the incoming data from the request body
+            data = request.get_json()
+            user_id = data['user_id']
+            biometrics_capture = data['biometrics_capture']
+            
+
+            # Get the user's fingerprint data from the database
+            fingerprints_data = get_fingerprints_from_database(user_id);
+
+            fingerprint1 = fingerprints_data[2]
+            fingerprint2 = fingerprints_data[3]
+            fingerprint3 = fingerprints_data[4]
+            fingerprint4 = fingerprints_data[5]
+            fingerprint5 = fingerprints_data[6]
+            # print(fingerprint4)
+            base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
+
+
+            extract_min_db = from_db_minutiae(base64_strings);
+
+            db_minutiae_data = []
+            for db_fingerprint in extract_min_db:
+                for termination in db_fingerprint['terminations']:
+                    db_minutiae_data.append(extract_feature_data(termination))
+                for bifurcation in db_fingerprint['bifurcations']:
+                    db_minutiae_data.append(extract_feature_data(bifurcation))
+
+            incoming_bio_min = incoming_minutiae(biometrics_capture);
+            incoming_minutiae_data = []
+            for incoming_fingerprint in incoming_bio_min:
+                for termination in incoming_fingerprint['terminations']:
+                    incoming_minutiae_data.append(extract_feature_data(termination))
+                for bifurcation in incoming_fingerprint['bifurcations']:
+                    incoming_minutiae_data.append(extract_feature_data(bifurcation))
+            # print(incoming_bio_min)
+            # matches = compare_minutiae(db_minutiae_data, incoming_minutiae_data)
+            if match_minutiae(db_minutiae_data, incoming_minutiae_data):
+                print("Fingerprints match!")
+                return jsonify({'message': 'Fingerprints match!', 'type': "true" }), 200
+            else:
+                print("Fingerprints do not match.")
+                return jsonify({'message': 'Fingerprints do not match.', 'type': "false" }), 200
+        except Exception as e:
+            return jsonify({'error': str(e)})
         
 
-        # Get the user's fingerprint data from the database
-        fingerprints_data = get_fingerprints_from_database(user_id);
 
-        fingerprint1 = fingerprints_data[2]
-        fingerprint2 = fingerprints_data[3]
-        fingerprint3 = fingerprints_data[4]
-        fingerprint4 = fingerprints_data[5]
-        fingerprint5 = fingerprints_data[6]
-        # print(fingerprint4)
-        base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
-
-
-        extract_min_db = from_db_minutiae(base64_strings);
-
-        db_minutiae_data = []
-        for db_fingerprint in extract_min_db:
-            for termination in db_fingerprint['terminations']:
-                db_minutiae_data.append(extract_feature_data(termination))
-            for bifurcation in db_fingerprint['bifurcations']:
-                db_minutiae_data.append(extract_feature_data(bifurcation))
-
-        incoming_bio_min = incoming_minutiae(biometrics_capture);
-        incoming_minutiae_data = []
-        for incoming_fingerprint in incoming_bio_min:
-            for termination in incoming_fingerprint['terminations']:
-                incoming_minutiae_data.append(extract_feature_data(termination))
-            for bifurcation in incoming_fingerprint['bifurcations']:
-                incoming_minutiae_data.append(extract_feature_data(bifurcation))
-        # print(incoming_bio_min)
-        # matches = compare_minutiae(db_minutiae_data, incoming_minutiae_data)
-        if match_minutiae(db_minutiae_data, incoming_minutiae_data):
-            print("Fingerprints match!")
-            return jsonify({'message': 'Fingerprints match!', 'type': "true" }), 200
-        else:
-            print("Fingerprints do not match.")
-            return jsonify({'message': 'Fingerprints do not match.', 'type': "false" }), 200
-
-
-    except Exception as e:
-        return jsonify({'error': str(e)})
-    
-
-
-@app.route('/get_userinfo', methods=['POST'])
+@app.route('/get_userinfo', methods=['POST', 'OPTIONS'])
 def get_userinfo():
-    try:
-        data = request.get_json()
-        pin = data['PIN']
-        fingerprints_data = get_user_from_database(pin);
-        return jsonify(fingerprints_data)
-    except Exception as e:
-        return jsonify({'error': str(e)})
-    
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            pin = data['PIN']
+            fingerprints_data = get_user_from_database(pin);
+            return jsonify(fingerprints_data)
+        except Exception as e:
+            return jsonify({'error': str(e)})
+        
 
 if __name__ == '__main__':
     app.run(debug=True, port=5012)
