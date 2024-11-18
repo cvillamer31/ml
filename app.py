@@ -265,7 +265,7 @@ def get_all_companies():
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
         response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
         return response, 200
-    if request.method == 'POST':
+    if request.method == 'GET':
         try:
             # data = request.get_json()
             # pin = data['PIN']
