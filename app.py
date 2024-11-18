@@ -172,6 +172,16 @@ def match_minutiae(db_data, user_data):
 
     return match_score >= match_threshold
 
+def get_locations():
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    query = 'SELECT id, name address FROM areas'
+    cursor.execute(query)
+    results = cursor.fetchall()
+    if results:
+        data = results
+    return data
+
 @app.route('/compare', methods=['POST', 'OPTIONS'])
 def compare():
     if request.method == 'OPTIONS':
@@ -246,6 +256,19 @@ def get_userinfo():
         except Exception as e:
             return jsonify({'error': str(e)})
         
+
+@app.route('/get_all_companies', methods=['GET'])
+def get_all_companies():
+    try:
+        # data = request.get_json()
+        # pin = data['PIN']
+        all_location = get_locations();
+        return jsonify(all_location)
+    except Exception as e:
+        return jsonify({'error': str(e)})
+    
+
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5012)
