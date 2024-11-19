@@ -8,6 +8,11 @@ from scipy.spatial.distance import cdist
 import cv2
 from flask_cors import CORS
 
+# Python Program to Get IP Address
+from requests import get
+
+ip = get('https://api.ipify.org').content.decode('utf8')
+
 app = Flask(__name__)
 CORS(app, origins=["https://biometric.iteklabs.tech"])
 app.config['CORS_HEADERS'] = 'application/json'
@@ -175,8 +180,8 @@ def match_minutiae(db_data, user_data):
 def get_locations():
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
-    query = 'SELECT id, name address FROM areas'
-    cursor.execute(query)
+    query = 'SELECT id, name address FROM areas WHERE ip_address = %s'
+    cursor.execute(query, (ip,))
     results = cursor.fetchall()
     if results:
         data = results
