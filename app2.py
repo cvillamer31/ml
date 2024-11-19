@@ -6,6 +6,9 @@ import numpy as np
 from scipy.spatial.distance import cdist
 import cv2
 import matching_fingerprint
+from requests import get
+
+ip = get('https://api.ipify.org').content.decode('utf8')
 
 app = Flask(__name__)
 # CORS(app, supports_credentials=False, max_age=86400)  # 86400 seconds = 1 day
@@ -81,8 +84,8 @@ def get_user_from_database(pin):
 def get_locations():
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
-    query = 'SELECT id, name address FROM areas'
-    cursor.execute(query)
+    query = 'SELECT id, name address FROM areas WHERE ip_address = %s'
+    cursor.execute(query, (ip,))
     results = cursor.fetchall()
     if results:
         data = results
@@ -160,6 +163,7 @@ def get_all_companies():
         return response, 200
     if request.method == 'GET':
         try:
+            print(ip)
             # data = request.get_json()
             # pin = data['PIN']
             all_location = get_locations();

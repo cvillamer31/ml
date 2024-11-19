@@ -272,6 +272,7 @@ def get_all_companies():
         return response, 200
     if request.method == 'GET':
         try:
+            print(ip)
             # data = request.get_json()
             # pin = data['PIN']
             all_location = get_locations();
