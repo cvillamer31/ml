@@ -173,7 +173,7 @@ def get_all_companies():
         
 
 @app.route('/502.shtml', methods=['GET', 'OPTIONS'])
-def get_all_companies():
+def test():
     if request.method == 'OPTIONS':
         response = jsonify({"status": "OK"})
         response.headers.add("Access-Control-Allow-Origin", "*")
