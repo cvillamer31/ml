@@ -7,8 +7,11 @@ import fingerprint_enhancer
 from scipy.spatial.distance import cdist
 import cv2
 from flask_cors import CORS
+from scipy.spatial import KDTree
+from requests import get
 
 app = Flask(__name__)
+ip = get('https://api.ipify.org').content.decode('utf8')
 CORS(app, origins=["https://biometric.iteklabs.tech"])
 app.config['CORS_HEADERS'] = 'application/json'
 
@@ -67,6 +70,16 @@ def get_user_from_database(pin):
         return fingerprints
     else:
         raise Exception("User not found")
+
+def get_locations(pin):
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    query = 'SELECT id, name address FROM areas WHERE ip_address = %s'
+    cursor.execute(query, (pin,))
+    results = cursor.fetchall()
+    if results:
+        data = results
+    return data
 
 # //////////////////////new
 def decode_base64_image(base64_str):
@@ -139,108 +152,155 @@ def extract_feature_data(minutiae_feature):
         'angle': minutiae_feature.Orientation # angle of the minutiae
     }
 
-def compare_minutiae(db_data, incoming_data):
-    # Example comparison function: count common minutiae based on position and type
-    matches = 0
-    for db_feature in db_data:
-        for incoming_feature in incoming_data:
-            if (db_feature['x'] == incoming_feature['x'] and
-                db_feature['y'] == incoming_feature['y'] and
-                db_feature['type'] == incoming_feature['type']):
-                matches += 1
+
+# ////////////////////////////////////// NEW
+
+
+def align_minutiae(query, reference):
+    """
+    Aligns the query minutiae set to the reference set using translation and rotation.
+    """
+    # Assuming the first minutiae pair are used for alignment
+
+    
+    r = reference
+    for idx, q in enumerate(query):
+        translation = (r['x'] - q['x'], r['y'] - q['y'])
+         # Average angles if they are lists
+        if isinstance(q['angle'], list):
+            q['angle'] = np.mean(q['angle'])  # Average the angles
+        if isinstance(r['angle'], list):
+            r['angle'] = np.mean(r['angle'])  # Average the angles
+
+        angle_diff = r['angle'] - q['angle']
+        # print(translation)
+    # q = query[0]
+    # r = reference[0]
+    
+    # # Calculate translation vector
+    # translation = (r['x'] - q['x'], r['y'] - q['y'])
+    
+    # # Calculate rotation angle
+    # angle_diff = r['angle'] - q['angle']
+    
+    # # Apply translation and rotation to all query minutiae
+    aligned_query = []
+    for m in query:
+        # Translate
+        x_trans = m['x'] + translation[0]
+        y_trans = m['y'] + translation[1]
+
+
+        
+        
+        # Rotate around reference minutiae
+        x_rot = (x_trans * np.cos(angle_diff)) - (y_trans * np.sin(angle_diff))
+        y_rot = (x_trans * np.sin(angle_diff)) + (y_trans * np.cos(angle_diff))
+        # print(x_rot)
+        aligned_query.append({
+            'x': x_rot,
+            'y': y_rot,
+            'angle': m['angle'] + angle_diff,
+            'type': m['type']
+        })
+    
+    return aligned_query
+
+def match_minutiae(query, reference, threshold=15):
+    """
+    Matches minutiae points between query and reference sets based on proximity and angle similarity.
+    """
+    # Convert minutiae to KDTree for fast spatial matching
+    query_points = [(m['x'], m['y']) for m in query]
+    reference = [reference]
+    reference_points = [(m['x'], m['y']) for m in reference]
+    reference_tree = KDTree(reference_points)
+    # print(type(reference))
+    # print(reference_tree)
+
+
+   
+    # print(reference_points)
+    matches = []
+    for i, q in enumerate(query):
+        # Find the nearest neighbor within the threshold
+        dist, idx = reference_tree.query((q['x'], q['y']), distance_upper_bound=threshold)
+        if dist < threshold:
+            # Check angle and type match
+            ref = reference[idx]
+            angle_diff = abs(q['angle'] - ref['angle']) % (2 * np.pi)
+            if angle_diff < np.radians(10) and q['type'] == ref['type']:
+                matches.append((i, idx))
+    
     return matches
-import matplotlib.pyplot as plt
-def match_minutiae(db_data, user_data):
-    plt.figure(figsize=(10, 8))
-    
-    # Combine all data for consistent color mapping
-    all_angles = []
-    for minutiae in db_data + user_data:
-        all_angles.extend(minutiae['angle'])
-    all_angles = np.array(all_angles)  # Convert to NumPy array
-    min_angle, max_angle = all_angles.min(), all_angles.max()  # Get range for normalization
-    
-    # Normalize angles for color mapping
-    normalize_angle = lambda angle: (np.mean(angle) - min_angle) / (max_angle - min_angle) if angle else 0.5
-
-    # Create scatter plot for DB Data
-    db_x = [m['x'] for m in db_data]
-    db_y = [m['y'] for m in db_data]
-    db_colors = [plt.cm.viridis(normalize_angle(m['angle'])) for m in db_data]
-    db_scatter = plt.scatter(db_x, db_y, c=db_colors, label='DB Data', marker='o')
-
-    # Create scatter plot for User Data
-    user_x = [m['x'] for m in user_data]
-    user_y = [m['y'] for m in user_data]
-    user_colors = [plt.cm.viridis(normalize_angle(m['angle'])) for m in user_data]
-    user_scatter = plt.scatter(user_x, user_y, c=user_colors, label='User Data', marker='x')
-
-    # Add text labels for minutiae types
-    for m in db_data:
-        plt.text(m['x'], m['y'], m['type'], fontsize=8, color='blue')
-    for m in user_data:
-        plt.text(m['x'], m['y'], m['type'], fontsize=8, color='red')
-
-    # Add colorbar
-    sm = plt.cm.ScalarMappable(cmap='viridis', norm=plt.Normalize(vmin=min_angle, vmax=max_angle))
-    sm.set_array([])  # This is required to avoid errors
-    cbar = plt.colorbar(sm, ax=plt.gca())  # Explicitly link the colorbar to the current Axes
-    cbar.set_label("Angle (Degrees)")
-    
-    # Plot details
-    plt.title("Minutiae Points with Spectral Color Mapping")
-    plt.xlabel("X Coordinate")
-    plt.ylabel("Y Coordinate")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
 
 
-def calculate_minutiae_properties(minutiae):
+def match_fingerprints(query_minutiae, reference_minutiae):
     """
-    Calculate various properties of fingerprint minutiae including:
-    - Distance between minutiae
-    - Angle differences
-    - Fourier transforms for spectral representation
-
-    Parameters:
-    minutiae (list): A list of dictionaries containing minutiae details.
-                     Each minutia should have 'x', 'y', 'angle', and 'type'.
-
-    Returns:
-    dict: Computed properties including distances, angles, and spectral transforms.
+    Full pipeline for matching fingerprints using minutiae.
     """
-    # Initialize results
-    properties = {
-        "distances": [],
-        "angle_differences": [],
-        "spectral_representation": []
+    # Align query minutiae to reference
+    aligned_query = align_minutiae(query_minutiae, reference_minutiae)
+    
+    # Match aligned minutiae
+    matches = match_minutiae(aligned_query, reference_minutiae)
+    
+    # Calculate similarity score
+    similarity_score = calculate_similarity(matches, aligned_query, reference_minutiae)
+    
+    return {
+        'matches': matches,
+        'similarity_score': similarity_score
     }
-    import math
 
-    # Calculate pairwise distances and angle differences
-    for i in range(len(minutiae)):
-        for j in range(i + 1, len(minutiae)):
-            x1, y1, angle1 = minutiae[i]["x"], minutiae[i]["y"], minutiae[i]["angle"]
-            x2, y2, angle2 = minutiae[j]["x"], minutiae[j]["y"], minutiae[j]["angle"]
-            
-            # Euclidean distance
-            distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-            properties["distances"].append((i, j, distance))
-            
-            # Angle difference (in degrees)
-            angle_diff = abs(angle2 - angle1) % 360
-            if angle_diff > 180:
-                angle_diff = 360 - angle_diff
-            properties["angle_differences"].append((i, j, angle_diff))
+
+def calculate_similarity(matches, query, reference):
+    """
+    Calculates similarity score based on the number of matches and total minutiae.
+    """
+    return len(matches) / max(len(query), len(reference))
+
+
+def match_fingerprints_multiple_references(query_minutiae, reference_minutiae_list):
+    """
+    Matches a query fingerprint against multiple reference fingerprints.
     
-    # Compute spectral representation
-    for minutia in minutiae:
-        x, y, angle = minutia["x"], minutia["y"], minutia["angle"]
-        spectral_value = np.exp(-1j * (x + y) + 1j * angle)
-        properties["spectral_representation"].append(spectral_value)
+    Parameters:
+    - query_minutiae: List of minutiae for the query fingerprint.
+    - reference_minutiae_list: List of minutiae lists for each reference fingerprint.
     
-    return properties
+    Returns:
+    - A dictionary containing matches and similarity scores for all references, 
+      and the best match.
+    """
+    results = []
+    for idx, reference_minutiae in enumerate(reference_minutiae_list):
+        # Align query minutiae to the current reference
+        aligned_query = align_minutiae(query_minutiae, reference_minutiae)
+       
+    #     
+        
+    #     # Match aligned minutiae
+        matches = match_minutiae(aligned_query, reference_minutiae)
+        
+    #     # Calculate similarity score
+        similarity_score = calculate_similarity(matches, aligned_query, reference_minutiae)
+        
+    #     # Store results for this reference
+        results.append({
+            "reference_index": idx,
+            "matches": matches,
+            "similarity_score": similarity_score
+        })
+    
+    # # Find the best match
+    best_match = max(results, key=lambda r: r['similarity_score'])
+    # print(best_match)
+    # print(best_match)
+    return {
+        # "all_results": results,
+        "best_match": best_match
+    }
 
 
 @app.route('/compare', methods=['POST', 'OPTIONS'])
@@ -294,9 +354,11 @@ def compare():
             #     return jsonify({'message': 'Fingerprints match!', 'type': "true" }), 200
             # else:
             #     print("Fingerprints do not match.")
-            data1233 = calculate_minutiae_properties(incoming_bio_min)
-            print(data1233)
-            return jsonify({'message': 'Fingerprints do not match.', 'type': "false" }), 200
+            # data1233 =
+            result = match_fingerprints_multiple_references(incoming_minutiae_data, db_minutiae_data)
+
+            print((result['best_match']['similarity_score'] * 100))
+            return jsonify({'score': result['best_match']['similarity_score'] * 100 }), 200
         except Exception as e:
             return jsonify({'error': str(e)})
         
@@ -319,6 +381,24 @@ def get_userinfo():
         except Exception as e:
             return jsonify({'error': str(e)})
         
+
+@app.route('/get_all_companies', methods=['POST', 'OPTIONS'])
+def get_all_companies():
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+    if request.method == 'POST':
+        try:
+            # print(ip)
+            data = request.get_json()
+            pin = data['ip_address']
+            all_location = get_locations(pin);
+            return jsonify(all_location)
+        except Exception as e:
+            return jsonify({'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5012)
