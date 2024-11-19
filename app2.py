@@ -90,6 +90,19 @@ def get_locations(pin):
     if results:
         data = results
     return data
+def comparison_result(inc, db_collect):
+
+    match_scores_all = []
+    for a in db_collect:
+        # data2 = incoming_minutiae(a)
+        match_score = matching_fingerprint.fingerprints_matching(inc, a)
+        match_scores_all.append(match_score)
+        print((match_score*100))
+    total_score = sum(match_scores_all) * 100
+    average_score = total_score / len(match_scores_all)
+
+    return total_score, average_score
+
 @app.route('/compare', methods=['POST', 'OPTIONS'])
 def compare():
 
@@ -117,14 +130,9 @@ def compare():
             fingerprint5 = fingerprints_data[6]
             # print(fingerprint4)
             base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
-            match_scores_all = []
-            for a in base64_strings:
-                # data2 = incoming_minutiae(a)
-                match_score = matching_fingerprint.fingerprints_matching(biometrics_capture, a)
-                match_scores_all.append(match_score)
-                print((match_score*100))
-            total_score = sum(match_scores_all) * 100
-            average_score = total_score / len(match_scores_all)
+
+            total_score, average_score = comparison_result(fingerprints_data, base64_strings)
+            
 
             return jsonify({'total_score_percent': total_score, 'average_percent': average_score }), 200
     
@@ -175,4 +183,4 @@ def get_all_companies():
 
 
 if __name__ == '__main__':
-    app.run(debug=False, port=5012)
+    app.run(debug=False, port=5012, threaded=True)
