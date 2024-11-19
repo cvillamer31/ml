@@ -7,7 +7,7 @@ from scipy.spatial.distance import cdist
 import cv2
 import matching_fingerprint
 from requests import get
-
+from datetime import timedelta
 
 ip = get('https://api.ipify.org').content.decode('utf8')
 
@@ -20,6 +20,8 @@ app = Flask(__name__)
 CORS(app, origins=["https://biometric.iteklabs.tech"])
 app.config['CORS_HEADERS'] = 'application/json'
 
+from datetime import timedelta
+app.permanent_session_lifetime = timedelta(minutes=30)
 
 # Set up MySQL connection
 # db = mysql.connector.connect(
@@ -187,4 +189,4 @@ def get_all_companies():
 
 
 if __name__ == '__main__':
-    app.run(debug=False, port=5012, threaded=True)
+    app.run(debug=False, port=5012)
