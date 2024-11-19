@@ -101,7 +101,7 @@ def comparison_result(inc, db_collect):
     total_score = sum(match_scores_all) * 100
     average_score = total_score / len(match_scores_all)
 
-    return total_score, average_score
+    return { "score" : total_score, "ave_score": average_score}
 
 @app.route('/compare', methods=['POST', 'OPTIONS'])
 def compare():
@@ -131,10 +131,10 @@ def compare():
             # print(fingerprint4)
             base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
 
-            total_score, average_score = comparison_result(fingerprints_data, base64_strings)
-            
+            score = comparison_result(biometrics_capture, base64_strings)
+            print(score)
 
-            return jsonify({'total_score_percent': total_score, 'average_percent': average_score }), 200
+            return jsonify({'total_score_percent': score['score'], 'average_percent': score['ave_score'] }), 200
     
 
         except Exception as e:
