@@ -81,11 +81,11 @@ def get_user_from_database(pin):
     else:
         raise Exception("User not found")
 
-def get_locations():
+def get_locations(pin):
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     query = 'SELECT id, name address FROM areas WHERE ip_address = %s'
-    cursor.execute(query, (ip,))
+    cursor.execute(query, (pin,))
     results = cursor.fetchall()
     if results:
         data = results
@@ -163,10 +163,10 @@ def get_all_companies():
         return response, 200
     if request.method == 'GET':
         try:
-            print(ip)
-            # data = request.get_json()
-            # pin = data['PIN']
-            all_location = get_locations();
+            # print(ip)
+            data = request.get_json()
+            pin = data['ip_address']
+            all_location = get_locations(pin);
             return jsonify(all_location)
         except Exception as e:
             return jsonify({'error': str(e)})
