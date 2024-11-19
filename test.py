@@ -206,7 +206,7 @@ def align_minutiae(query, reference):
     
     return aligned_query
 
-def match_minutiae(query, reference, threshold=15):
+def match_minutiae(query, reference, threshold=10, angle_tolerance=np.radians(10)):
     """
     Matches minutiae points between query and reference sets based on proximity and angle similarity.
     """
@@ -229,7 +229,9 @@ def match_minutiae(query, reference, threshold=15):
             # Check angle and type match
             ref = reference[idx]
             angle_diff = abs(q['angle'] - ref['angle']) % (2 * np.pi)
-            if angle_diff < np.radians(10) and q['type'] == ref['type']:
+            if angle_diff > np.pi:  # Normalize to [0, π]
+                angle_diff = 2 * np.pi - angle_diff
+            if angle_diff < angle_tolerance and q['type'] == ref['type']:
                 matches.append((i, idx))
     
     return matches
