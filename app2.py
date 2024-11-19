@@ -153,7 +153,7 @@ def get_userinfo():
     
 
 
-@app.route('/get_all_companies', methods=['GET', 'OPTIONS'])
+@app.route('/get_all_companies', methods=['POST', 'OPTIONS'])
 def get_all_companies():
     if request.method == 'OPTIONS':
         response = jsonify({"status": "OK"})
@@ -161,7 +161,7 @@ def get_all_companies():
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
         response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
         return response, 200
-    if request.method == 'GET':
+    if request.method == 'POST':
         try:
             # print(ip)
             data = request.get_json()
