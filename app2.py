@@ -11,12 +11,15 @@ from requests import get
 
 ip = get('https://api.ipify.org').content.decode('utf8')
 
+
+
 app = Flask(__name__)
 # CORS(app, supports_credentials=False, max_age=86400)  # 86400 seconds = 1 day
 # CORS(app, resources={r"/compare": {"origins": "*", "methods": ["POST"]}})
 # CORS(app, resources={r"/get_userinfo": {"origins": "*", "methods": ["POST"]}})
 CORS(app, origins=["https://biometric.iteklabs.tech"])
 app.config['CORS_HEADERS'] = 'application/json'
+
 
 # Set up MySQL connection
 # db = mysql.connector.connect(
