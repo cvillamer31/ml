@@ -8,6 +8,7 @@ import cv2
 import matching_fingerprint
 from requests import get
 
+
 ip = get('https://api.ipify.org').content.decode('utf8')
 
 app = Flask(__name__)
