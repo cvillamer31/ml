@@ -9,6 +9,44 @@ import cv2
 from flask_cors import CORS
 from scipy.spatial import KDTree
 from requests import get
+import ctypes
+from PIL import Image
+import io
+import platform
+arch = platform.architecture()[0]
+print(arch)
+# import settings
+
+if platform.system() == "Windows":
+    dpfj_dll = ctypes.CDLL("dpfj.dll")  # Windows Lib
+    dpfj_dll.dpfj_create_fmd_from_raw.restype = ctypes.c_int
+    dpfj_dll.dpfj_create_fmd_from_raw.argtypes = [
+        ctypes.POINTER(ctypes.c_ubyte),  # Image data pointer
+        ctypes.c_uint,                   # Image size
+        ctypes.c_uint,                   # Image width
+        ctypes.c_uint,                   # Image height
+        ctypes.c_uint,                   # Image DPI
+        ctypes.c_int,                    # Finger position (1 = right thumb)
+        ctypes.c_uint,                   # CBEFF ID (usually 0)
+        ctypes.c_int,                    # FMD type (e.g., 2 for ANSI 378-2004)
+        ctypes.POINTER(ctypes.c_ubyte),  # FMD output buffer
+        ctypes.POINTER(ctypes.c_uint)    # FMD size
+    ]
+else:
+    dpfj_dll = ctypes.CDLL("libdpfj.so")  # Linux Lib
+    dpfj_dll.dpfj_create_fmd_from_raw.restype = ctypes.c_int
+    dpfj_dll.dpfj_create_fmd_from_raw.argtypes = [
+        ctypes.POINTER(ctypes.c_ubyte),  # Image data pointer
+        ctypes.c_uint,                   # Image size
+        ctypes.c_uint,                   # Image width
+        ctypes.c_uint,                   # Image height
+        ctypes.c_uint,                   # Image DPI
+        ctypes.c_int,                    # Finger position (1 = right thumb)
+        ctypes.c_uint,                   # CBEFF ID (usually 0)
+        ctypes.c_int,                    # FMD type (e.g., 2 for ANSI 378-2004)
+        ctypes.POINTER(ctypes.c_ubyte),  # FMD output buffer
+        ctypes.POINTER(ctypes.c_uint)    # FMD size
+    ]
 
 app = Flask(__name__)
 ip = get('https://api.ipify.org').content.decode('utf8')
@@ -82,227 +120,304 @@ def get_locations(pin):
     return data
 
 # //////////////////////new
-def decode_base64_image(base64_str):
-    # Strip the "data:image/png;base64," prefix
-    if base64_str.startswith("data:image/png;base64,"):
-        base64_str = base64_str.split(",")[1]  # Get the Base64 encoded part
+
+# def base64_to_raw(base64_data):
+#     # Decode Base64 string
+#     base64_str = base64_data.split(",")[1]
+#     image_data = base64.b64decode(base64_str)
     
-    img_data = base64.b64decode(base64_str)
-    img_array = np.frombuffer(img_data, dtype=np.uint8)
-    return cv2.imdecode(img_array, cv2.IMREAD_GRAYSCALE)
+#     # Convert PNG to grayscale raw data
+#     image = Image.open(io.BytesIO(image_data)).convert("L")  # "L" for grayscale
+#     raw_data = np.asarray(image, dtype=np.uint8).tobytes()
+#     return raw_data, image.size  # Returns raw data and dimensions (width, height
 
 
-def print_minutiae_features(features):
-    for feature in features:
-        print(f"locX: {feature.locX}, locY: {feature.locY}, Orientation: {feature.Orientation}, Type: {feature.Type}")
-
-def from_db_minutiae(data):
-    features_list = []
-    for i, base64_string in enumerate(data):
-        base64_data = base64_string.split(",")[1]
-        image_data = base64.b64decode(base64_data)
-        np_array = np.frombuffer(image_data, np.uint8)
-        image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-        img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-        # img_gray = cv2.GaussianBlur(img_gray, (5, 5), 0)
-        # img_gray = cv2.equalizeHist(img_gray)
-        img_enhanced = fingerprint_enhancer.enhance_fingerprint(img_gray)
-        if img_enhanced.dtype == bool:
-                img_enhanced = np.uint8(img_enhanced * 255)
-                # Normalize pixel values to 0-255
-                img_enhanced = cv2.normalize(img_enhanced, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
-                FeaturesTerminations, FeaturesBifurcations = fingerprint_feature_extractor.extract_minutiae_features(img_enhanced, spuriousMinutiaeThresh=10, invertImage=False, showResult=False, saveResult=False)
-                features_list.append({
-                    'terminations': FeaturesTerminations,
-                    'bifurcations': FeaturesBifurcations
-                })
-    return features_list
-    
-def incoming_minutiae(data):
-    features_list = []
-    base64_data = data.split(",")[1]
-    image_data = base64.b64decode(base64_data)
-    np_array = np.frombuffer(image_data, np.uint8)
-    image = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
-    img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # img_gray = cv2.GaussianBlur(img_gray, (5, 5), 0)
-    # img_gray = cv2.equalizeHist(img_gray)
-    
-    img_enhanced = fingerprint_enhancer.enhance_fingerprint(img_gray)
-    if img_enhanced.dtype == bool:
-                img_enhanced = np.uint8(img_enhanced * 255)
-                # Normalize pixel values to 0-255
-                img_enhanced = cv2.normalize(img_enhanced, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
-                FeaturesTerminations, FeaturesBifurcations = fingerprint_feature_extractor.extract_minutiae_features(img_enhanced, spuriousMinutiaeThresh=10, invertImage=False, showResult=False, saveResult=False)
-                features_list.append({
-                    'terminations': FeaturesTerminations,
-                    'bifurcations': FeaturesBifurcations
-                })
-    return features_list
-
-def extract_feature_data(minutiae_feature):
-    # Extract the data from the MinutiaeFeature object
-    # Adjust according to the structure of your MinutiaeFeature class
-    # print(minutiae_feature.Orientation)
-    return {
-        'type': minutiae_feature.Type,  # 'termination' or 'bifurcation'
-        'x': minutiae_feature.locX,        # x-coordinate
-        'y': minutiae_feature.locY,        # y-coordinate
-        'angle': minutiae_feature.Orientation # angle of the minutiae
-    }
-
-
-# ////////////////////////////////////// NEW
-
-
-def align_minutiae(query, reference):
+def base64_to_raw(base64_data, resize_width=None, resize_height=None, dpi=500):
     """
-    Aligns the query minutiae set to the reference set using translation and rotation.
-    """
-    # Assuming the first minutiae pair are used for alignment
+    Convert a Base64-encoded PNG image to raw grayscale data with optional resizing and DPI adjustment.
 
-    
-    r = reference
-    for idx, q in enumerate(query):
-        translation = (r['x'] - q['x'], r['y'] - q['y'])
-         # Average angles if they are lists
-        if isinstance(q['angle'], list):
-            q['angle'] = np.mean(q['angle'])  # Average the angles
-        if isinstance(r['angle'], list):
-            r['angle'] = np.mean(r['angle'])  # Average the angles
+    Args:
+        base64_data (str): Base64-encoded PNG image.
+        resize_width (int): Optional. Target width for resizing. If None, original width is used.
+        resize_height (int): Optional. Target height for resizing. If None, original height is used.
+        dpi (int): Optional. Target DPI for the processed image. Default is 500.
 
-        angle_diff = r['angle'] - q['angle']
-        # print(translation)
-    # q = query[0]
-    # r = reference[0]
-    
-    # # Calculate translation vector
-    # translation = (r['x'] - q['x'], r['y'] - q['y'])
-    
-    # # Calculate rotation angle
-    # angle_diff = r['angle'] - q['angle']
-    
-    # # Apply translation and rotation to all query minutiae
-    aligned_query = []
-    for m in query:
-        # Translate
-        x_trans = m['x'] + translation[0]
-        y_trans = m['y'] + translation[1]
-
-
-        
-        
-        # Rotate around reference minutiae
-        x_rot = (x_trans * np.cos(angle_diff)) - (y_trans * np.sin(angle_diff))
-        y_rot = (x_trans * np.sin(angle_diff)) + (y_trans * np.cos(angle_diff))
-        # print(x_rot)
-        aligned_query.append({
-            'x': x_rot,
-            'y': y_rot,
-            'angle': m['angle'] + angle_diff,
-            'type': m['type']
-        })
-    
-    return aligned_query
-
-def match_minutiae(query, reference, threshold=10, angle_tolerance=np.radians(10)):
-    """
-    Matches minutiae points between query and reference sets based on proximity and angle similarity.
-    """
-    # Convert minutiae to KDTree for fast spatial matching
-    query_points = [(m['x'], m['y']) for m in query]
-    reference = [reference]
-    reference_points = [(m['x'], m['y']) for m in reference]
-    reference_tree = KDTree(reference_points)
-    # print(type(reference))
-    # print(reference_tree)
-
-
-   
-    # print(reference_points)
-    matches = []
-    for i, q in enumerate(query):
-        # Find the nearest neighbor within the threshold
-        dist, idx = reference_tree.query((q['x'], q['y']), distance_upper_bound=threshold)
-        if dist < threshold:
-            # Check angle and type match
-            ref = reference[idx]
-            angle_diff = abs(q['angle'] - ref['angle']) % (2 * np.pi)
-            if angle_diff > np.pi:  # Normalize to [0, π]
-                angle_diff = 2 * np.pi - angle_diff
-            if angle_diff < angle_tolerance and q['type'] == ref['type']:
-                matches.append((i, idx))
-    
-    return matches
-
-
-def match_fingerprints(query_minutiae, reference_minutiae):
-    """
-    Full pipeline for matching fingerprints using minutiae.
-    """
-    # Align query minutiae to reference
-    aligned_query = align_minutiae(query_minutiae, reference_minutiae)
-    
-    # Match aligned minutiae
-    matches = match_minutiae(aligned_query, reference_minutiae)
-    
-    # Calculate similarity score
-    similarity_score = calculate_similarity(matches, aligned_query, reference_minutiae)
-    
-    return {
-        'matches': matches,
-        'similarity_score': similarity_score
-    }
-
-
-def calculate_similarity(matches, query, reference):
-    """
-    Calculates similarity score based on the number of matches and total minutiae.
-    """
-    return len(matches) / max(len(query), len(reference))
-
-
-def match_fingerprints_multiple_references(query_minutiae, reference_minutiae_list):
-    """
-    Matches a query fingerprint against multiple reference fingerprints.
-    
-    Parameters:
-    - query_minutiae: List of minutiae for the query fingerprint.
-    - reference_minutiae_list: List of minutiae lists for each reference fingerprint.
-    
     Returns:
-    - A dictionary containing matches and similarity scores for all references, 
-      and the best match.
+        tuple: (raw_data, (width, height)) where raw_data is the grayscale byte array
+               and (width, height) are the dimensions of the processed image.
     """
-    results = []
-    for idx, reference_minutiae in enumerate(reference_minutiae_list):
-        # Align query minutiae to the current reference
-        aligned_query = align_minutiae(query_minutiae, reference_minutiae)
-       
-    #     
-        
-    #     # Match aligned minutiae
-        matches = match_minutiae(aligned_query, reference_minutiae)
-        
-    #     # Calculate similarity score
-        similarity_score = calculate_similarity(matches, aligned_query, reference_minutiae)
-        
-    #     # Store results for this reference
-        results.append({
-            "reference_index": idx,
-            "matches": matches,
-            "similarity_score": similarity_score
-        })
+    base64_str = base64_data.split(",")[1]
+    image_data = base64.b64decode(base64_str)
     
-    # # Find the best match
-    best_match = max(results, key=lambda r: r['similarity_score'])
-    # print(best_match)
-    # print(best_match)
-    return {
-        # "all_results": results,
-        "best_match": best_match
-    }
+    # Open the image and convert it to grayscale
+    image = Image.open(io.BytesIO(image_data)).convert("L")
+    
+    # Resize the image if dimensions are provided
+    if resize_width and resize_height:
+        image = image.resize((resize_width, resize_height), Image.LANCZOS)
+
+    # Save the image with adjusted DPI
+    raw_array = np.asarray(image, dtype=np.uint8)
+    raw_data = raw_array.tobytes()
+    return raw_data, image.size
+
+
+
+def get_error_message(code):
+        error_messages = {
+            0: "API call succeeded.",
+            96075786: "API call is not implemented.",
+            96075787: "Reason for the failure is unknown or cannot be specified.",
+            96075788: "No data is available.",
+            96075789: "The memory allocated by the application is not big enough for the data which is expected.",
+            96075796: "One or more parameters passed to the API call are invalid.",
+            96075797: "Reader handle is not valid.",
+            96075806: "The API call cannot be completed because another call is in progress.",
+            96075807: "The reader is not working properly.",
+            96075877: "FID is invalid.",
+            96075878: "Image is too small.",
+            96075977: "FMD is invalid.",
+            96076077: "Enrollment operation is in progress.",
+            96076078: "Enrollment operation has not begun.",
+            96076079: "Not enough in the pool of FMDs to create enrollment FMD.",
+            96076080: "Unable to create enrollment FMD with the collected set of FMDs."
+        }
+
+        # Default error message
+        return error_messages.get(
+            code, f"Unknown error, code: 0x{code:x}"
+        )
+
+# def extract_fmd_from_base64(base64_image):
+#     try:
+#         # Decode Base64 image
+#         dpi = 500  # Try higher DPI like 1000
+#         raw_data, (width, height) = base64_to_raw(base64_image, 320, 360,dpi)
+
+#         # Use a standard DPI value (test with 1000)
+        
+#         print(f"Image size: {width}x{height}, DPI: {dpi}")
+
+#         # Allocate more memory for FMD
+#         fmd = (ctypes.c_ubyte * 20000)()  # Increase memory for larger FMDs
+#         fmd_size = ctypes.c_uint(0)
+
+#         # Call dpfj_create_fmd_from_raw
+        
+#         result = dpfj_dll.dpfj_create_fmd_from_raw(
+#             ctypes.cast(raw_data, ctypes.POINTER(ctypes.c_ubyte)),
+#             len(raw_data), 
+#             width, 
+#             height, 
+#             dpi,
+#             1,  # DPFJ_POSITION_RTHUMB
+#             0,  # CBEFF ID
+#             2,  # FMD Type (ANSI 378-2004)
+#             fmd, ctypes.byref(fmd_size)
+#         )
+
+#         print(f"Result: {result} <> {len(raw_data)}")
+#         print(get_error_message(result))
+#         # print(fmd)
+#         if result != 0:
+#             raise Exception(f"Error extracting FMD (Code: {result})")
+        
+#         # Return FMD as bytes
+#         return bytes(fmd[:fmd_size.value])
+
+#     except Exception as e:
+#         raise Exception(f"Error in FMD extraction: {str(e)}")
+
+DPFJ_E_MORE_DATA = 96075789
+def extract_fmd_from_base64(base64_image):
+    try:
+        dpi = 500  # Use a standard DPI value
+        raw_data, (width, height) = base64_to_raw(base64_image, 320, 360, dpi)
+
+        # print(f"Raw data size: {len(raw_data)}, Image dimensions: {width}x{height}, DPI: {dpi}")
+
+        # First, allocate memory for FMD with MAX_FMD_SIZE
+        buffer_size = 10000  # Initial size for FMD
+        fmd = (ctypes.c_ubyte * buffer_size)()
+        fmd_size = ctypes.c_uint(0)
+
+        # Call dpfj_create_fmd_from_raw to process the image and extract features
+        result = dpfj_dll.dpfj_create_fmd_from_raw(
+            ctypes.cast(raw_data, ctypes.POINTER(ctypes.c_ubyte)),
+            len(raw_data),
+            width,
+            height,
+            dpi,
+            1,  # DPFJ_POSITION_RTHUMB (right thumb)
+            0,  # CBEFF ID (typically 0)
+            0x001B0001,  # FMD Type (custom type, e.g., 0x001B0001)
+            fmd, ctypes.byref(fmd_size)
+        )
+
+        # print(f"Result: {result}, FMD size required: {fmd_size.value}, Raw data size: {len(raw_data)}")
+
+        if result == DPFJ_E_MORE_DATA:
+            # If memory is insufficient, allocate more memory based on the required size
+            # print(f"Insufficient memory. Reallocating memory with size {fmd_size.value} bytes.")
+            fmd = (ctypes.c_ubyte * fmd_size.value)()  # Reallocate buffer with the correct size
+
+            # Try again with the reallocated memory
+            result = dpfj_dll.dpfj_create_fmd_from_raw(
+                ctypes.cast(raw_data, ctypes.POINTER(ctypes.c_ubyte)),
+                len(raw_data),
+                width,
+                height,
+                dpi,
+                1,  # DPFJ_POSITION_RTHUMB
+                0,  # CBEFF ID
+                0x001B0001,  # FMD Type (custom type)
+                fmd, ctypes.byref(fmd_size)
+            )
+
+        # Handle the result of the operation
+        if result != 0:
+            # print(get_error_message(result))
+            raise Exception(f"Error extracting FMD (Code: {result})")
+
+        # Return the FMD as bytes
+        return bytes(fmd[:fmd_size.value])
+
+    except Exception as e:
+        raise Exception(f"Error in FMD extraction: {str(e)}")
+
+
+
+# def compare_templates(template1, template2):
+#     # You shpuld install the proper Digital Persona OS Library
+#     # if settings.Windows:
+#     dpfj_dll = ctypes.CDLL("dpfj.dll")  # Windows Lib
+#     # else:
+#     #     dpfj_dll = ctypes.CDLL("libdpfj.so.3.1.0")  # Linux Lib
+
+#     fmd1_temp = extract_fmd_from_base64(template1)
+#     fmd2_temp = extract_fmd_from_base64(template2)
+
+
+#     dpfj_compare = dpfj_dll.dpfj_compare
+
+#     dpfj_compare.restype = ctypes.c_int
+
+#     dpfj_compare.argtypes = [
+#         ctypes.c_int,
+#         ctypes.c_char_p,
+#         ctypes.c_uint,
+#         ctypes.c_uint,
+#         ctypes.c_int,
+#         ctypes.c_char_p,
+#         ctypes.c_uint,
+#         ctypes.c_uint,
+#         ctypes.POINTER(ctypes.c_uint),
+#     ]
+
+#     fmd1_type = 2
+#     fmd1 = fmd1_temp
+#     fmd1_size = len(fmd1)
+#     fmd1_view_idx = 0
+#     fmd2_type = 1
+#     fmd2 = fmd2_temp
+#     fmd2_size = len(fmd2)
+#     fmd2_view_idx = 0
+#     score = ctypes.c_uint(0)
+
+#     result = dpfj_compare(
+#         fmd1_type,
+#         fmd1,
+#         fmd1_size,
+#         fmd1_view_idx,
+#         fmd2_type,
+#         fmd2,
+#         fmd2_size,
+#         fmd2_view_idx,
+#         ctypes.byref(score),
+#     )
+
+#     accepted_score = 21474  # This comes by PROBABILITY_ONE / 100000 where PROBABILITY_ONE = 0x7fffffff
+#     print(result)
+#     if (int(score.value) < accepted_score) and (result == 0):
+#         return True
+#     else:
+#         return False
+    
+
+def compare_templates(template1, template2):
+    """
+    Compare two fingerprint templates using the Digital Persona SDK.
+
+    Args:
+        template1 (str): Base64-encoded PNG of the first fingerprint.
+        template2 (str): Base64-encoded PNG of the second fingerprint.
+
+    Returns:
+        bool: True if the fingerprints match, False otherwise.
+    """
+    # Load the Digital Persona SDK library
+    dpfj_dll = ctypes.CDLL("dpfj.dll")  # Windows Library
+    # Ensure dpfj_compare is properly defined
+    dpfj_compare = dpfj_dll.dpfj_compare
+    dpfj_compare.restype = ctypes.c_int
+    dpfj_compare.argtypes = [
+        ctypes.c_int,                   # fmd1_type
+        ctypes.POINTER(ctypes.c_ubyte), # fmd1
+        ctypes.c_uint,                  # fmd1_size
+        ctypes.c_uint,                  # fmd1_view_idx
+        ctypes.c_int,                   # fmd2_type
+        ctypes.POINTER(ctypes.c_ubyte), # fmd2
+        ctypes.c_uint,                  # fmd2_size
+        ctypes.c_uint,                  # fmd2_view_idx
+        ctypes.POINTER(ctypes.c_uint),  # score
+    ]
+
+    # Extract FMDs from Base64 templates
+    fmd1 = extract_fmd_from_base64(template1)
+    fmd2 = extract_fmd_from_base64(template2)
+
+    # Define FMD properties
+    fmd_type = 0x001B0001  # ANSI 378-2004
+    fmd1_size = len(fmd1)
+    fmd2_size = len(fmd2)
+    score = ctypes.c_uint(0)
+
+    # Call the dpfj_compare function
+    result = dpfj_compare(
+        fmd_type,
+        ctypes.cast(fmd1, ctypes.POINTER(ctypes.c_ubyte)),
+        fmd1_size,
+        0,  # View index for FMD1
+        fmd_type,
+        ctypes.cast(fmd2, ctypes.POINTER(ctypes.c_ubyte)),
+        fmd2_size,
+        0,  # View index for FMD2
+        ctypes.byref(score),
+    )
+
+    # print(get_error_message(result))
+
+    # Check the result and the score
+    accepted_score = 21474  # Threshold based on PROBABILITY_ONE / 100000
+    print(f"Result: {result}, Score: {score.value}")
+
+    if result != 0:
+        raise Exception(f"Error in comparison: {result}")
+    
+    return score.value < accepted_score
+
+
+def finger_print_verify(template, db_templates):
+    # imc_temp = template.split(",")[1];
+
+    # mc_temp_bytes = base64.b64decode(imc_temp) 
+    for db_template in db_templates:
+        # base64_str = db_template.split(",")[1];
+        # db_temp_bytes = base64.b64decode(base64_str);
+        is_valid = compare_templates(template, db_template)
+        print(is_valid)
+
+
 
 
 @app.route('/compare', methods=['POST', 'OPTIONS'])
@@ -332,35 +447,9 @@ def compare():
             # print(fingerprint4)
             base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
 
+            finger_print_verify(biometrics_capture, base64_strings)
 
-            extract_min_db = from_db_minutiae(base64_strings);
-
-            db_minutiae_data = []
-            for db_fingerprint in extract_min_db:
-                for termination in db_fingerprint['terminations']:
-                    db_minutiae_data.append(extract_feature_data(termination))
-                for bifurcation in db_fingerprint['bifurcations']:
-                    db_minutiae_data.append(extract_feature_data(bifurcation))
-
-            incoming_bio_min = incoming_minutiae(biometrics_capture);
-            incoming_minutiae_data = []
-            for incoming_fingerprint in incoming_bio_min:
-                for termination in incoming_fingerprint['terminations']:
-                    incoming_minutiae_data.append(extract_feature_data(termination))
-                for bifurcation in incoming_fingerprint['bifurcations']:
-                    incoming_minutiae_data.append(extract_feature_data(bifurcation))
-            # print(incoming_bio_min)
-            # matches = compare_minutiae(db_minutiae_data, incoming_minutiae_data)
-            # if match_minutiae(db_minutiae_data, incoming_minutiae_data):
-            #     print("Fingerprints match!")
-            #     return jsonify({'message': 'Fingerprints match!', 'type': "true" }), 200
-            # else:
-            #     print("Fingerprints do not match.")
-            # data1233 =
-            result = match_fingerprints_multiple_references(incoming_minutiae_data, db_minutiae_data)
-
-            print((result['best_match']['similarity_score'] * 100))
-            return jsonify({'score': result['best_match']['similarity_score'] * 100 }), 200
+            return jsonify({'score': 100} ), 200
         except Exception as e:
             return jsonify({'error': str(e)})
         
