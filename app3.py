@@ -266,7 +266,7 @@ def compare_templates(template1, template2):
         bool: True if the fingerprints match, False otherwise.
     """
     # Load the Digital Persona SDK library
-    dpfj_dll = ctypes.CDLL("dpfj.dll")  # Windows Library
+    # dpfj_dll = ctypes.CDLL("dpfj.dll")  # Windows Library
     # Ensure dpfj_compare is properly defined
     dpfj_compare = dpfj_dll.dpfj_compare
     dpfj_compare.restype = ctypes.c_int
