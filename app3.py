@@ -14,7 +14,7 @@ import io
 import platform
 arch = platform.architecture()[0]
 import os
-os.path.dirname(__file__)
+print(os.path.dirname(__file__))
 
 print(arch + " <> " +  platform.system())
 # import settings
