@@ -1,20 +1,22 @@
 from flask import Flask, request, jsonify, g
+from flask_cors import CORS
 import base64
 import mysql.connector
 import numpy as np
-import fingerprint_feature_extractor
-import fingerprint_enhancer
 from scipy.spatial.distance import cdist
 import cv2
-from flask_cors import CORS
-from scipy.spatial import KDTree
+import matching_fingerprint
 from requests import get
+from datetime import timedelta
 import ctypes
 from PIL import Image
 import io
 import platform
 arch = platform.architecture()[0]
-print(arch)
+
+
+
+print(arch + " <> " +  platform.system())
 # import settings
 
 if platform.system() == "Windows":
@@ -48,12 +50,29 @@ else:
         ctypes.POINTER(ctypes.c_uint)    # FMD size
     ]
 
-app = Flask(__name__)
 ip = get('https://api.ipify.org').content.decode('utf8')
+
+
+
+app = Flask(__name__)
+# CORS(app, supports_credentials=False, max_age=86400)  # 86400 seconds = 1 day
+# CORS(app, resources={r"/compare": {"origins": "*", "methods": ["POST"]}})
+# CORS(app, resources={r"/get_userinfo": {"origins": "*", "methods": ["POST"]}})
 CORS(app, origins=["https://biometric.iteklabs.tech"])
 app.config['CORS_HEADERS'] = 'application/json'
 
+from datetime import timedelta
+app.permanent_session_lifetime = timedelta(minutes=30)
+
 # Set up MySQL connection
+# db = mysql.connector.connect(
+#     host="172.105.116.65",
+#     user="philstud_ml",
+#     password="Rk88j;OcQ8f3",
+#     database="philstud_biomentrics",
+#     ssl_disabled=True  # Disable SSL if not required
+# )
+
 db_config = {
     'host': "172.105.116.65",
     'user': "philstud_ml",
@@ -119,17 +138,6 @@ def get_locations(pin):
         data = results
     return data
 
-# //////////////////////new
-
-# def base64_to_raw(base64_data):
-#     # Decode Base64 string
-#     base64_str = base64_data.split(",")[1]
-#     image_data = base64.b64decode(base64_str)
-    
-#     # Convert PNG to grayscale raw data
-#     image = Image.open(io.BytesIO(image_data)).convert("L")  # "L" for grayscale
-#     raw_data = np.asarray(image, dtype=np.uint8).tobytes()
-#     return raw_data, image.size  # Returns raw data and dimensions (width, height
 
 
 def base64_to_raw(base64_data, resize_width=None, resize_height=None, dpi=500):
@@ -320,9 +328,9 @@ def finger_print_verify(template, db_templates):
 
     return is_valid
 
-
 @app.route('/compare', methods=['POST', 'OPTIONS'])
 def compare():
+
     if request.method == 'OPTIONS':
         response = jsonify({"status": "OK"})
         response.headers.add("Access-Control-Allow-Origin", "*")
@@ -354,9 +362,10 @@ def compare():
                 return jsonify({'valid': theresult, 'message': "Fingerprint Match" }), 200
             else:
                 return jsonify({'valid': theresult , 'message': "Fingerprint Not Match" }), 200
+
         except Exception as e:
-            return jsonify({'error': str(e)})
-        
+            return jsonify({'error': str(e)}), 500
+    
 
 
 @app.route('/get_userinfo', methods=['POST', 'OPTIONS'])
@@ -375,7 +384,8 @@ def get_userinfo():
             return jsonify(fingerprints_data)
         except Exception as e:
             return jsonify({'error': str(e)})
-        
+    
+
 
 @app.route('/get_all_companies', methods=['POST', 'OPTIONS'])
 def get_all_companies():
@@ -394,6 +404,9 @@ def get_all_companies():
             return jsonify(all_location)
         except Exception as e:
             return jsonify({'error': str(e)})
+        
+
+
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5012)
+    app.run(debug=False, port=5012)
