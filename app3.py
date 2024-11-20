@@ -14,41 +14,41 @@ import io
 import platform
 arch = platform.architecture()[0]
 import os
-print(os.path.dirname(__file__))
+print(os.path.abspath("libdpfj.so"))
 
 print(arch + " <> " +  platform.system())
 # import settings
 
-# if platform.system() == "Windows":
-dpfj_dll = ctypes.CDLL("dpfj.dll")  # Windows Lib
-dpfj_dll.dpfj_create_fmd_from_raw.restype = ctypes.c_int
-dpfj_dll.dpfj_create_fmd_from_raw.argtypes = [
-    ctypes.POINTER(ctypes.c_ubyte),  # Image data pointer
-    ctypes.c_uint,                   # Image size
-    ctypes.c_uint,                   # Image width
-    ctypes.c_uint,                   # Image height
-    ctypes.c_uint,                   # Image DPI
-    ctypes.c_int,                    # Finger position (1 = right thumb)
-    ctypes.c_uint,                   # CBEFF ID (usually 0)
-    ctypes.c_int,                    # FMD type (e.g., 2 for ANSI 378-2004)
-    ctypes.POINTER(ctypes.c_ubyte),  # FMD output buffer
-    ctypes.POINTER(ctypes.c_uint)    # FMD size
-]
-# else:
-#     dpfj_dll = ctypes.CDLL("libdpfj.so")  # Linux Lib
-#     dpfj_dll.dpfj_create_fmd_from_raw.restype = ctypes.c_int
-#     dpfj_dll.dpfj_create_fmd_from_raw.argtypes = [
-#         ctypes.POINTER(ctypes.c_ubyte),  # Image data pointer
-#         ctypes.c_uint,                   # Image size
-#         ctypes.c_uint,                   # Image width
-#         ctypes.c_uint,                   # Image height
-#         ctypes.c_uint,                   # Image DPI
-#         ctypes.c_int,                    # Finger position (1 = right thumb)
-#         ctypes.c_uint,                   # CBEFF ID (usually 0)
-#         ctypes.c_int,                    # FMD type (e.g., 2 for ANSI 378-2004)
-#         ctypes.POINTER(ctypes.c_ubyte),  # FMD output buffer
-#         ctypes.POINTER(ctypes.c_uint)    # FMD size
-#     ]
+if platform.system() == "Windows":
+    dpfj_dll = ctypes.CDLL("dpfj.dll")  # Windows Lib
+    dpfj_dll.dpfj_create_fmd_from_raw.restype = ctypes.c_int
+    dpfj_dll.dpfj_create_fmd_from_raw.argtypes = [
+        ctypes.POINTER(ctypes.c_ubyte),  # Image data pointer
+        ctypes.c_uint,                   # Image size
+        ctypes.c_uint,                   # Image width
+        ctypes.c_uint,                   # Image height
+        ctypes.c_uint,                   # Image DPI
+        ctypes.c_int,                    # Finger position (1 = right thumb)
+        ctypes.c_uint,                   # CBEFF ID (usually 0)
+        ctypes.c_int,                    # FMD type (e.g., 2 for ANSI 378-2004)
+        ctypes.POINTER(ctypes.c_ubyte),  # FMD output buffer
+        ctypes.POINTER(ctypes.c_uint)    # FMD size
+    ]
+else:
+    dpfj_dll = ctypes.CDLL(os.path.abspath("libdpfj.so"))  # Linux Lib
+    dpfj_dll.dpfj_create_fmd_from_raw.restype = ctypes.c_int
+    dpfj_dll.dpfj_create_fmd_from_raw.argtypes = [
+        ctypes.POINTER(ctypes.c_ubyte),  # Image data pointer
+        ctypes.c_uint,                   # Image size
+        ctypes.c_uint,                   # Image width
+        ctypes.c_uint,                   # Image height
+        ctypes.c_uint,                   # Image DPI
+        ctypes.c_int,                    # Finger position (1 = right thumb)
+        ctypes.c_uint,                   # CBEFF ID (usually 0)
+        ctypes.c_int,                    # FMD type (e.g., 2 for ANSI 378-2004)
+        ctypes.POINTER(ctypes.c_ubyte),  # FMD output buffer
+        ctypes.POINTER(ctypes.c_uint)    # FMD size
+    ]
 
 ip = get('https://api.ipify.org').content.decode('utf8')
 
