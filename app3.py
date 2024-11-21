@@ -213,13 +213,15 @@ def add_location(user_id, user_location, user_date, user_time):
 
             theIn = results[0]['in_time']
             the_in_str = datetime.strptime(str(theIn), "%H:%M:%S")
-            work_duration = actual_out - the_in_str
-            print(f"Total work hours: {work_duration}")
-            # if actual_out > the_in_str:
-            #     work_duration = actual_out - the_in_str
-            #     print(f"Total work hours: {work_duration}")
-            # else:
-            #     print("Invalid times: time_out is earlier than time_in")
+            # work_duration = actual_out - the_in_str
+            # print(f"Total work hours: {work_duration}")
+            if actual_out > the_in_str:
+                work_duration = actual_out - the_in_str
+                print(f"Total work hours: {work_duration}")
+            else:
+                print("Invalid times: time_out is earlier than time_in")
+                work_duration = timedelta(0)
+
             if actual_out < schedule_out:
                 early_out = schedule_out - actual_out
                 print(f"Early out by: {early_out}")
@@ -227,9 +229,9 @@ def add_location(user_id, user_location, user_date, user_time):
                 print("No early out!")
                 early_out = timedelta(0)  # Represent no early out
             sql_query = """
-                UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, early_out_time = %s  WHERE id = %s
+                UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, early_out_time = %s, work_hour = %s  WHERE id = %s
             """
-            values = (user_location, user_time, user_date, timestamp, early_out, id_attendance)
+            values = (user_location, user_time, user_date, timestamp, early_out, work_duration, id_attendance)
             cursor.execute(sql_query, values)
             db.commit()
 
