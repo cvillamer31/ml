@@ -206,10 +206,18 @@ def add_location(user_id, user_location, user_date, user_time):
                 return serialize_response(False, "E", [])
         else:
             id_attendance = results[0]['id']
+            schedule_out = datetime.strptime(str(out_time), "%H:%M:%S")
+            actual_out = datetime.strptime(user_time, "%H:%M:%S:%f")
+            if actual_out < schedule_out:
+                early_out = schedule_out - actual_out
+                print(f"Early out by: {early_out}")
+            else:
+                print("No early out!")
+                early_out = timedelta(0)  # Represent no early out
             sql_query = """
-                UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s  WHERE id = %s
+                UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, early_out_time = %s  WHERE id = %s
             """
-            values = (user_location, user_time, user_date, timestamp, id_attendance)
+            values = (user_location, user_time, user_date, timestamp, early_out, id_attendance)
             cursor.execute(sql_query, values)
             db.commit()
 
