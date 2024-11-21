@@ -7,7 +7,7 @@ from scipy.spatial.distance import cdist
 import cv2
 import matching_fingerprint
 from requests import get
-from datetime import timedelta
+from datetime import timedelta, datetime, date
 import ctypes
 from PIL import Image
 import io
@@ -138,6 +138,99 @@ def get_locations(pin):
         data = results
     return data
 
+def serialize_response(valid, message, data):
+    """Serialize datetime and timedelta objects for JSON."""
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if isinstance(value, (datetime, date)):
+                data[key] = value.isoformat()
+            elif isinstance(value, timedelta):
+                data[key] = str(value)
+    return {"valid": valid, "message": message, "data": data}
+
+def add_location(user_id, user_location, user_date, user_time):
+    try:
+        # Establish a connection to the database
+        db = get_db_connection()
+        # getting logs today
+        cursor = db.cursor(dictionary=True)
+        query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s'
+        cursor.execute(query, (user_date,user_id, user_location))
+        results = cursor.fetchall()
+
+        #getting shift today
+        query_shift = """
+            SELECT shifts.name,shifts.start_time, shifts.end_time, shifts.late_mark_after FROM shift_user 
+            LEFT JOIN shifts on shift_user.shift_id = shifts.id
+            WHERE worker_id = %s
+        """
+        cursor.execute(query_shift, (user_id,))
+        results_shift = cursor.fetchall();
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # print(results_shift[0]['end_time'])
+        # print(results[0])
+        if(len(results) == 0):
+            in_time = results_shift[0]['start_time'];
+            out_time = results_shift[0]['end_time'];
+            grace_period = results_shift[0]['late_mark_after'];
+
+
+            schedule_in = datetime.strptime(str(in_time), "%H:%M:%S")
+            time_in = datetime.strptime(user_time, "%H:%M:%S:%f")
+            # late_time = time_in - (schedule_in + grace_period)
+
+            # print(late_time)
+
+            if time_in > schedule_in:
+                late_time = time_in - (schedule_in + grace_period)
+                print(f"Late by: {late_time}")
+            else:
+                print("On time!")
+                late_time = timedelta(0)  # Represent no lateness
+            sql_query = """
+            INSERT INTO attendances (worker_id, in_location_id, date, in_time, late_time, out_time, over_time, early_out_time, out_location_id, work_hour, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            values = (user_id, user_location, user_date, user_time, late_time, timedelta(0), timedelta(0), timedelta(0), user_location, timedelta(0), timestamp)
+            cursor.execute(sql_query, values)
+            db.commit()
+
+            if cursor.rowcount > 0:
+                query_data = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s'
+                cursor.execute(query_data, (user_date,user_id, user_location))
+                result_data = cursor.fetchone()
+
+                return serialize_response(True, "I", result_data)
+            else:
+                return serialize_response(False, "E", [])
+        else:
+            id_attendance = results[0]['id']
+            sql_query = """
+                UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s  WHERE id = %s
+            """
+            values = (user_location, user_time, user_date, timestamp, id_attendance)
+            cursor.execute(sql_query, values)
+            db.commit()
+
+            if cursor.rowcount > 0:
+                query_data = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s'
+                cursor.execute(query_data, (user_date,user_id, user_location))
+                result_data = cursor.fetchone()
+                return serialize_response(True, "O", result_data)
+            else:
+                return serialize_response(False, "E", [])
+
+    except mysql.connector.Error as err:
+        # Handle database errors
+        return f"Error: {err}"
+
+    # finally:
+    #     # Ensure the connection is closed
+    #     if 'conn' in locals() and db.is_connected():
+    #         db.close()
+
+    # return "test"
 
 
 def base64_to_raw(base64_data, resize_width=None, resize_height=None, dpi=500):
@@ -407,6 +500,30 @@ def get_all_companies():
         
 
 
+@app.route('/get_attendance', methods=['POST', 'OPTIONS'])
+def get_attendance():
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+    if request.method == 'POST':
+        try:
+            # print(ip)
+            data = request.get_json()
+            user_id = data['user_id']
+            user_location = data['user_location']
+            user_date = data['user_date']
+            user_time = data['user_time']
+            all_location = add_location(user_id, user_location, user_date, user_time);
+            print(all_location)
+            return all_location
+        except Exception as e:
+            return jsonify({'error': str(e)})
+        
+
+
 
 if __name__ == '__main__':
-    app.run(debug=False, port=5012)
+    app.run(debug=True, port=5012)
