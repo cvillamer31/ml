@@ -209,6 +209,17 @@ def add_location(user_id, user_location, user_date, user_time):
             out_time = results_shift[0]['end_time'];
             schedule_out = datetime.strptime(str(out_time), "%H:%M:%S")
             actual_out = datetime.strptime(user_time, "%H:%M:%S:%f")
+
+
+            theIn = results[0]['in_time']
+            the_in_str = datetime.strptime(str(theIn), "%H:%M:%S")
+            work_duration = actual_out - the_in_str
+            print(f"Total work hours: {work_duration}")
+            # if actual_out > the_in_str:
+            #     work_duration = actual_out - the_in_str
+            #     print(f"Total work hours: {work_duration}")
+            # else:
+            #     print("Invalid times: time_out is earlier than time_in")
             if actual_out < schedule_out:
                 early_out = schedule_out - actual_out
                 print(f"Early out by: {early_out}")
