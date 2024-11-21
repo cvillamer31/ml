@@ -206,6 +206,7 @@ def add_location(user_id, user_location, user_date, user_time):
                 return serialize_response(False, "E", [])
         else:
             id_attendance = results[0]['id']
+            out_time = results_shift[0]['end_time'];
             schedule_out = datetime.strptime(str(out_time), "%H:%M:%S")
             actual_out = datetime.strptime(user_time, "%H:%M:%S:%f")
             if actual_out < schedule_out:
