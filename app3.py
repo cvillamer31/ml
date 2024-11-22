@@ -175,11 +175,11 @@ def getLogs(id, date):
         query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s'
         cursor.execute(query, (date,id,))
         results_data = cursor.fetchall()
-        print(results_data[0])
+        # print(results_data[0])
         if(len(results_data) > 0):
             results_data= serialize_response("True", "Found", results_data[0])
         else:
-            results_data= serialize_response("False", "Not Found", [])
+            results_data= {"valid": "False", "message": "Not Found", "data": []}
         # print(results_data)
         return results_data
     except mysql.connector.Error as err:
