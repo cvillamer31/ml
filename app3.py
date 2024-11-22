@@ -167,6 +167,25 @@ def get_user_from_database_all():
         return fingerprints
     else:
         raise Exception("User not found")
+    
+def getLogs(id, date):
+    try:
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+        query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s'
+        cursor.execute(query, (date,id,))
+        results_data = cursor.fetchall()
+        print(results_data[0])
+        if(len(results_data) > 0):
+            results_data= serialize_response("True", "Found", results_data[0])
+        else:
+            results_data= serialize_response("False", "Not Found", results_data[0])
+        # print(results_data)
+        return results_data
+    except mysql.connector.Error as err:
+        # Handle database errors
+        return f"Error: {err}"
+
 
 def get_locations(pin):
     db = get_db_connection()
@@ -579,8 +598,11 @@ def get_userinfo():
         try:
             data = request.get_json()
             pin = data['PIN']
+            date = data['date']
             fingerprints_data = get_user_from_database(pin);
-            return jsonify(fingerprints_data)
+            logstoday = getLogs( fingerprints_data['id'], date)
+            # print(logstoday)
+            return jsonify({ "user_info" : fingerprints_data, "logs": logstoday })
         except Exception as e:
             return jsonify({'error': str(e)})
     
