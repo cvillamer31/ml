@@ -179,7 +179,7 @@ def getLogs(id, date):
         if(len(results_data) > 0):
             results_data= serialize_response("True", "Found", results_data[0])
         else:
-            results_data= serialize_response("False", "Not Found", results_data[0])
+            results_data= serialize_response("False", "Not Found", [])
         # print(results_data)
         return results_data
     except mysql.connector.Error as err:
