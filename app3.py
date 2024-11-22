@@ -162,7 +162,8 @@ def get_user_from_database_all():
                 'id': a['id'],
                 'name': a['name'],
                 'email': a['email'],
-                'image': a['image']
+                'image': a['image'],
+                'PIN' : a['pin']
             })
         return fingerprints
     else:
@@ -555,12 +556,15 @@ def compare_all():
             # Get the incoming data from the request body
             data = request.get_json()
             biometrics_capture = data['biometrics_capture']
+            user_location = data['user_location']
+            user_date = data['user_date']
+            user_time = data['user_time']
 
             theUser = get_user_from_database_all();
             for a in theUser:
                 # print(a)
                 fingerprints_data = get_fingerprints_from_database_all(a['id'])
-                print(len(fingerprints_data))
+                # print(len(fingerprints_data))
                 if(len(fingerprints_data) > 0):
                     fingerprint1 = fingerprints_data[2]
                     fingerprint2 = fingerprints_data[3]
@@ -570,15 +574,18 @@ def compare_all():
 
                     base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
                     theresult = finger_print_verify(biometrics_capture, base64_strings)
+                    
                     if(theresult):
-                        print(str(a['id']) + " <> " + str(theresult))
+                        print(str(a['id']) + " <> " + a['PIN'] + " <> " + str(theresult))
+                        fingerprints_data = get_user_from_database(a['PIN'] );
+                        all_location = add_location(fingerprints_data['id'], user_location, user_date, user_time);
                         break
 
 
             if(theresult):
-                return jsonify({'valid': theresult, 'message': "Fingerprint Match" }), 200
+                return jsonify({'valid': theresult, 'user_info': fingerprints_data, 'user_logs': all_location }), 200
             else:
-                return jsonify({'valid': theresult , 'message': "Fingerprint Not Match" }), 200
+                return jsonify({'valid': theresult , 'user_info': [], 'user_logs': [] }), 200
                 
             # return jsonify({'valid': "true" , 'message': "Fingerprint Not Match" }), 200
         except Exception as e:
