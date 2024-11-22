@@ -108,6 +108,23 @@ def get_fingerprints_from_database(user_id):
     else:
         raise Exception("User not found")
 
+def get_fingerprints_from_database_all(user_id):
+    db = get_db_connection()
+    cursor = db.cursor()
+    query_fingerprint = 'SELECT id, user_id, img_1, img_2, img_3, img_4, img_5 FROM biometrics_data WHERE user_id = %s'
+    # query_fingerprint = 'SELECT id, user_id FROM biometrics_data WHERE user_id = %s'
+    cursor.execute(query_fingerprint, (user_id,))
+    results = cursor.fetchall()
+    # print(results)
+    if results:
+        fingerprints = results[0]
+        if fingerprints[0] > 0:  # Checking if the user exists
+            return fingerprints
+        else:
+            raise Exception("User not found")
+    else:
+        return results
+    
 
 def get_user_from_database(pin):
     # cursor = db.cursor()
@@ -124,6 +141,29 @@ def get_user_from_database(pin):
             'email': results[0]['email'],
             'image': results[0]['image']
         }
+        return fingerprints
+    else:
+        raise Exception("User not found")
+    
+    
+def get_user_from_database_all():
+    # cursor = db.cursor()
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    query = 'SELECT * FROM users'
+    cursor.execute(query, ())
+    results = cursor.fetchall()
+
+    if results:
+        # print(results)
+        fingerprints = []
+        for a in results:
+            fingerprints.append({
+                'id': a['id'],
+                'name': a['name'],
+                'email': a['email'],
+                'image': a['image']
+            })
         return fingerprints
     else:
         raise Exception("User not found")
@@ -149,6 +189,7 @@ def serialize_response(valid, message, data):
     return {"valid": valid, "message": message, "data": data}
 
 def add_location(user_id, user_location, user_date, user_time):
+
     try:
         # Establish a connection to the database
         db = get_db_connection()
@@ -189,10 +230,10 @@ def add_location(user_id, user_location, user_date, user_time):
                 print("On time!")
                 late_time = timedelta(0)  # Represent no lateness
             sql_query = """
-            INSERT INTO attendances (worker_id, in_location_id, date, in_time, late_time, out_time, over_time, early_out_time, out_location_id, work_hour, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO attendances (worker_id, in_location_id, date, in_time, late_time, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s)
             """
-            values = (user_id, user_location, user_date, user_time, late_time, timedelta(0), timedelta(0), timedelta(0), user_location, timedelta(0), timestamp)
+            values = (user_id, user_location, user_date, user_time, late_time, timestamp)
             cursor.execute(sql_query, values)
             db.commit()
 
@@ -481,6 +522,49 @@ def compare():
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     
+@app.route('/compare_all', methods=['POST', 'OPTIONS'])
+def compare_all():
+
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+    if request.method == 'POST':
+        try:
+            # Get the incoming data from the request body
+            data = request.get_json()
+            biometrics_capture = data['biometrics_capture']
+
+            theUser = get_user_from_database_all();
+            for a in theUser:
+                # print(a)
+                fingerprints_data = get_fingerprints_from_database_all(a['id'])
+                print(len(fingerprints_data))
+                if(len(fingerprints_data) > 0):
+                    fingerprint1 = fingerprints_data[2]
+                    fingerprint2 = fingerprints_data[3]
+                    fingerprint3 = fingerprints_data[4]
+                    fingerprint4 = fingerprints_data[5]
+                    fingerprint5 = fingerprints_data[6]
+
+                    base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
+                    theresult = finger_print_verify(biometrics_capture, base64_strings)
+                    if(theresult):
+                        print(str(a['id']) + " <> " + str(theresult))
+                        break
+
+
+            if(theresult):
+                return jsonify({'valid': theresult, 'message': "Fingerprint Match" }), 200
+            else:
+                return jsonify({'valid': theresult , 'message': "Fingerprint Not Match" }), 200
+                
+            # return jsonify({'valid': "true" , 'message': "Fingerprint Not Match" }), 200
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
 
 
 @app.route('/get_userinfo', methods=['POST', 'OPTIONS'])
@@ -539,6 +623,7 @@ def get_attendance():
             user_date = data['user_date']
             user_time = data['user_time']
             all_location = add_location(user_id, user_location, user_date, user_time);
+
             print(all_location)
             return all_location
         except Exception as e:
