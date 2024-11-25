@@ -200,7 +200,7 @@ def get_locations(pin):
 
 def serialize_response(valid, message, data):
     """Serialize datetime and timedelta objects for JSON."""
-    print(data)
+    # print(data)
     # print(isinstance(data, dict))
     if isinstance(data, dict):
         for key, value in data.items():
@@ -338,7 +338,7 @@ def add_location2(user_id, user_location, user_date, user_time):
         results = cursor.fetchall()
 
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        timeonly = datetime.now().strftime('%H:%M:%S:%f')
+        # timeonly = datetime.now().strftime('%H:%M:%S:%f')
         # print(results_shift[0]['end_time'])
         # print(results[0]['type_of_attendance'])
         if(len(results) == 0):
@@ -349,7 +349,7 @@ def add_location2(user_id, user_location, user_date, user_time):
             INSERT INTO attendance2 (user_id, location_id, date, time, type_of_attendance, created_at)
             VALUES (%s, %s, %s, %s, %s, %s)
             """
-            values = (user_id, user_location, user_date, timeonly, "I", timestamp)
+            values = (user_id, user_location, user_date, user_time, "I", timestamp)
             cursor.execute(sql_query, values)
             db.commit()
 
@@ -372,7 +372,7 @@ def add_location2(user_id, user_location, user_date, user_time):
                 INSERT INTO attendance2 (user_id, location_id, date, time, type_of_attendance, created_at)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 """
-                values = (user_id, user_location, user_date, timeonly, "O", timestamp)
+                values = (user_id, user_location, user_date, user_time, "O", timestamp)
                 cursor.execute(sql_query, values)
                 db.commit()
                 if cursor.rowcount > 0:
