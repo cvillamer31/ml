@@ -200,12 +200,23 @@ def get_locations(pin):
 
 def serialize_response(valid, message, data):
     """Serialize datetime and timedelta objects for JSON."""
+    print(data)
+    # print(isinstance(data, dict))
     if isinstance(data, dict):
         for key, value in data.items():
             if isinstance(value, (datetime, date)):
                 data[key] = value.isoformat()
             elif isinstance(value, timedelta):
                 data[key] = str(value)
+    elif isinstance(data, list):
+        for a in data:
+            if isinstance(a, dict):
+                for key, value in a.items():
+                    if isinstance(value, (datetime, date)):
+                        a[key] = value.isoformat()  # Convert datetime or date to iso format
+                    elif isinstance(value, timedelta):
+                        a[key] = str(value)  # Convert timedelta to string
+
     return {"valid": valid, "message": message, "data": data}
 
 def add_location(user_id, user_location, user_date, user_time):
@@ -314,6 +325,83 @@ def add_location(user_id, user_location, user_date, user_time):
     #         db.close()
 
     # return "test"
+
+def add_location2(user_id, user_location, user_date, user_time):
+
+    try:
+        # Establish a connection to the database
+        db = get_db_connection()
+        # getting logs today
+        cursor = db.cursor(dictionary=True)
+        query = 'SELECT * FROM attendance2 WHERE date = %s AND user_id = %s AND location_id = %s'
+        cursor.execute(query, (user_date,user_id, user_location))
+        results = cursor.fetchall()
+
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        timeonly = datetime.now().strftime('%H:%M:%S:%f')
+        # print(results_shift[0]['end_time'])
+        # print(results[0]['type_of_attendance'])
+        if(len(results) == 0):
+            time_in = datetime.strptime(user_time, "%H:%M:%S:%f")
+            # late_time = time_in - (schedule_in + grace_period)
+
+            sql_query = """
+            INSERT INTO attendance2 (user_id, location_id, date, time, type_of_attendance, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            values = (user_id, user_location, user_date, timeonly, "I", timestamp)
+            cursor.execute(sql_query, values)
+            db.commit()
+
+            if cursor.rowcount > 0:
+                query_data = 'SELECT * FROM attendance2 WHERE date = %s AND user_id = %s AND location_id = %s'
+                cursor.execute(query_data, (user_date,user_id, user_location))
+                result_data = cursor.fetchone()
+
+                return serialize_response(True, "I", result_data)
+            else:
+                return serialize_response(False, "E", [])
+        else:
+            query = 'SELECT * FROM attendance2 WHERE date = %s AND user_id = %s AND location_id = %s AND type_of_attendance = %s'
+            cursor.execute(query, (user_date,user_id, user_location, "O"))
+            results = cursor.fetchall()
+            print(cursor.rowcount)
+
+            if cursor.rowcount == 0:
+                sql_query = """
+                INSERT INTO attendance2 (user_id, location_id, date, time, type_of_attendance, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """
+                values = (user_id, user_location, user_date, timeonly, "O", timestamp)
+                cursor.execute(sql_query, values)
+                db.commit()
+                if cursor.rowcount > 0:
+                    query_data = 'SELECT * FROM attendance2 WHERE date = %s AND user_id = %s AND location_id = %s'
+                    cursor.execute(query_data, (user_date,user_id, user_location))
+                    result_data = cursor.fetchall()
+
+                    return serialize_response(True, "O", result_data)
+            else:
+                # print("here")
+                query_data = 'SELECT * FROM attendance2 WHERE date = %s AND user_id = %s AND location_id = %s'
+                cursor.execute(query_data, (user_date,user_id, user_location))
+                result_data = cursor.fetchall()
+                return serialize_response(False, "AR", result_data)
+
+            # return results
+
+        # return "hrllo"
+    except mysql.connector.Error as err:
+        # Handle database errors
+        return f"Error: {err}"
+
+    # finally:
+    #     # Ensure the connection is closed
+    #     if 'conn' in locals() and db.is_connected():
+    #         db.close()
+
+    # return "test"
+
 
 
 def base64_to_raw(base64_data, resize_width=None, resize_height=None, dpi=500):
@@ -645,15 +733,34 @@ def get_attendance():
         return response, 200
     if request.method == 'POST':
         try:
-            # print(ip)
             data = request.get_json()
             user_id = data['user_id']
             user_location = data['user_location']
             user_date = data['user_date']
             user_time = data['user_time']
             all_location = add_location(user_id, user_location, user_date, user_time);
+            all_location2 = add_location2(user_id, user_location, user_date, user_time);
+            return all_location
+        except Exception as e:
+            return jsonify({'error': str(e)})
 
-            print(all_location)
+
+@app.route('/get_attendance2', methods=['POST', 'OPTIONS'])
+def get_attendance2():
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            user_id = data['user_id']
+            user_location = data['user_location']
+            user_date = data['user_date']
+            user_time = data['user_time']
+            all_location = add_location2(user_id, user_location, user_date, user_time);
             return all_location
         except Exception as e:
             return jsonify({'error': str(e)})
