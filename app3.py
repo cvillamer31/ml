@@ -899,12 +899,15 @@ def get_attendance2():
 def no_pin():
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
-    query = 'SELECT count(*) AS noofemp FROM `users` WHERE role = 3'
-    cursor.execute(query, ())
+    query = 'SELECT count(*) AS noofemp, SUBSTRING(pin,1,2) as prefix FROM `users` WHERE SUBSTRING(pin,1,2) = %s'
+    cursor.execute(query, ('08',))  # Note the comma to make it a tuple
     results = cursor.fetchone()
     if results:
         data = results
+    else:
+        data = None  # Handle the case where no results are found
     return data
+
 
 
 @app.route('/get_pin', methods=['POST', 'OPTIONS'])
