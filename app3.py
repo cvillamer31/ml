@@ -219,6 +219,137 @@ def serialize_response(valid, message, data):
 
     return {"valid": valid, "message": message, "data": data}
 
+
+
+# def add_location(user_id, user_location, user_date, user_time):
+
+#     try:
+#         # Establish a connection to the database
+#         db = get_db_connection()
+#         # getting logs today
+#         cursor = db.cursor(dictionary=True)
+#         query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s'
+#         cursor.execute(query, (user_date,user_id, user_location))
+#         results = cursor.fetchall()
+
+#         #getting shift today
+#         query_shift = """
+#             SELECT shifts.name,shifts.start_time, shifts.end_time, shifts.late_mark_after, shifts.isNight FROM shift_user 
+#             LEFT JOIN shifts on shift_user.shift_id = shifts.id
+#             WHERE worker_id = %s
+#         """
+#         cursor.execute(query_shift, (user_id,))
+#         results_shift = cursor.fetchone();
+#         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+#         datepast = user_date
+#         past_date = datetime.strptime(datepast, "%Y-%m-%d").date()  # Convert to date
+#         datepast = past_date - timedelta(days=1)
+
+#         print(datepast)
+
+#         # print(results_shift['isNight'])
+#         if(results_shift['isNight']):
+#             shiftin = results_shift['start_time']
+#             shiftout = results_shift['end_time']
+#             query_out = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date_out = %s AND worker_id = %s AND in_location_id = %s'
+#             cursor.execute(query_out, (user_date,user_id, user_location))
+#             results = cursor.fetchall()
+
+#             if(len(results) == 0):
+#                 query_past = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date_out = %s AND worker_id = %s AND in_location_id = %s'
+#                 cursor.execute(query_past, (datepast,user_id, user_location))
+#                 results_past = cursor.fetchall()
+
+#                 print(results_past)
+#             return "asd"
+#         else:
+#             # print(results[0])
+#             if(len(results) == 0):
+#                 in_time = results_shift['start_time'];
+#                 out_time = results_shift['end_time'];
+#                 grace_period = results_shift['late_mark_after'];
+
+
+#                 schedule_in = datetime.strptime(str(in_time), "%H:%M:%S")
+#                 time_in = datetime.strptime(user_time, "%H:%M:%S:%f")
+#                 # late_time = time_in - (schedule_in + grace_period)
+
+#                 # print(late_time)
+
+#                 if time_in > schedule_in:
+#                     late_time = time_in - (schedule_in + grace_period)
+#                     print(f"Late by: {late_time}")
+#                 else:
+#                     print("On time!")
+#                     late_time = timedelta(0)  # Represent no lateness
+#                 sql_query = """
+#                 INSERT INTO attendances (worker_id, in_location_id, date, in_time, late_time, created_at)
+#                 VALUES (%s, %s, %s, %s, %s, %s)
+#                 """
+#                 values = (user_id, user_location, user_date, user_time, late_time, timestamp)
+#                 cursor.execute(sql_query, values)
+#                 db.commit()
+
+#                 if cursor.rowcount > 0:
+#                     query_data = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s'
+#                     cursor.execute(query_data, (user_date,user_id, user_location))
+#                     result_data = cursor.fetchone()
+
+#                     return serialize_response(True, "I", result_data)
+#                 else:
+#                     return serialize_response(False, "E", [])
+#             else:
+#                 id_attendance = results['id']
+#                 out_time = results_shift['end_time'];
+#                 schedule_out = datetime.strptime(str(out_time), "%H:%M:%S")
+#                 actual_out = datetime.strptime(user_time, "%H:%M:%S:%f")
+
+
+#                 theIn = results[0]['in_time']
+#                 the_in_str = datetime.strptime(str(theIn), "%H:%M:%S")
+#                 # work_duration = actual_out - the_in_str
+#                 # print(f"Total work hours: {work_duration}")
+#                 if actual_out > the_in_str:
+#                     work_duration = actual_out - the_in_str
+#                     print(f"Total work hours: {work_duration}")
+#                 else:
+#                     print("Invalid times: time_out is earlier than time_in")
+#                     work_duration = timedelta(0)
+
+#                 if actual_out < schedule_out:
+#                     early_out = schedule_out - actual_out
+#                     print(f"Early out by: {early_out}")
+#                 else:
+#                     print("No early out!")
+#                     early_out = timedelta(0)  # Represent no early out
+#                 sql_query = """
+#                     UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, early_out_time = %s, work_hour = %s  WHERE id = %s
+#                 """
+#                 values = (user_location, user_time, user_date, timestamp, early_out, work_duration, id_attendance)
+#                 cursor.execute(sql_query, values)
+#                 db.commit()
+
+#                 if cursor.rowcount > 0:
+#                     query_data = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s'
+#                     cursor.execute(query_data, (user_date,user_id, user_location))
+#                     result_data = cursor.fetchone()
+#                     return serialize_response(True, "O", result_data)
+#                 else:
+#                     return serialize_response(False, "E", [])
+
+#     except mysql.connector.Error as err:
+#         # Handle database errors
+#         return f"Error: {err}"
+
+#     # finally:
+#     #     # Ensure the connection is closed
+#     #     if 'conn' in locals() and db.is_connected():
+#     #         db.close()
+
+#     # return "test"
+
+
 def add_location(user_id, user_location, user_date, user_time):
 
     try:
@@ -765,6 +896,33 @@ def get_attendance2():
         except Exception as e:
             return jsonify({'error': str(e)})
         
+def no_pin():
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    query = 'SELECT count(*) AS noofemp FROM `users` WHERE role = 3'
+    cursor.execute(query, ())
+    results = cursor.fetchone()
+    if results:
+        data = results
+    return data
+
+
+@app.route('/get_pin', methods=['POST', 'OPTIONS'])
+def get_pin():
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+    if request.method == 'POST':
+        try:
+            
+            
+            all_location = no_pin();
+            return all_location
+        except Exception as e:
+            return jsonify({'error': str(e)})
 
 
 
