@@ -400,7 +400,7 @@ def add_location(user_id, user_location, user_date, user_time):
             # else:
                 
             #     print(results)
-            return "asd"
+            # return "asd"
         else:
             # print(results[0])
             if(len(results) == 0):
