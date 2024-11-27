@@ -963,7 +963,7 @@ def get_userinfo():
             data = request.get_json()
             pin = data['PIN']
             date = data['date']
-            fingerprints_data = get_user_from_database(pin);
+            fingerprints_data = get_user_from_database("08-"+pin);
             logstoday = getLogs( fingerprints_data['id'], date)
             # print(logstoday)
             return jsonify({ "user_info" : fingerprints_data, "logs": logstoday })
