@@ -250,7 +250,7 @@ def add_location(user_id, user_location, user_date, user_time):
         query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s'
         cursor.execute(query, (user_date,user_id, user_location))
         results = cursor.fetchall()
-
+        
         #getting shift today
         query_shift = """
             SELECT shifts.name,shifts.start_time, shifts.end_time, shifts.late_mark_after, shifts.isNight FROM shift_user 
@@ -449,6 +449,7 @@ def add_location(user_id, user_location, user_date, user_time):
             # return "asd"
         else:
             # print(results[0])
+            
             if(len(results) == 0):
                 in_time = results_shift['start_time'];
                 out_time = results_shift['end_time'];
@@ -484,12 +485,13 @@ def add_location(user_id, user_location, user_date, user_time):
                 else:
                     return serialize_response(False, "E", [])
             else:
-                id_attendance = results['id']
+                id_attendance = results[0]['id']
+                # print(id_attendance)
                 out_time = results_shift['end_time'];
                 schedule_out = datetime.strptime(str(out_time), "%H:%M:%S")
                 actual_out = datetime.strptime(user_time, "%H:%M:%S:%f")
 
-
+                print("asdasas")
                 theIn = results[0]['in_time']
                 the_in_str = datetime.strptime(str(theIn), "%H:%M:%S")
                 # work_duration = actual_out - the_in_str
