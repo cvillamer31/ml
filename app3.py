@@ -352,6 +352,8 @@ def add_location(user_id, user_location, user_date, user_time):
                     elif(in_time_in_hours == 0 and out_time_in_hours == 0):
                         # in today
                         print("in today")
+            else:
+                print(results)
                 # print(out_time_in_hours)
             # if(len(results) == 0):
             #     query_past = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date_out = %s AND date = %s AND worker_id = %s AND in_location_id = %s AND out_location_id = %s'
