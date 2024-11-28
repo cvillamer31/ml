@@ -145,6 +145,25 @@ def get_user_from_database(pin):
     else:
         raise Exception("User not found")
     
+def get_user_from_database_qr(pin):
+    # cursor = db.cursor()
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    query = 'SELECT * FROM users WHERE id = %s'
+    cursor.execute(query, (pin,))
+    results = cursor.fetchall()
+
+    if results:
+        fingerprints = {
+            'id': results[0]['id'],
+            'name': results[0]['name'],
+            'email': results[0]['email'],
+            'image': results[0]['image']
+        }
+        return fingerprints
+    else:
+        raise Exception("User not found")
+    
     
 def get_user_from_database_all():
     # cursor = db.cursor()
@@ -246,7 +265,7 @@ def add_location(user_id, user_location, user_date, user_time):
         past_date = datetime.strptime(datepast, "%Y-%m-%d").date()  # Convert to date
         datepast = past_date - timedelta(days=1)
 
-        print(datepast)
+        # print(results)
 
         # print(results_shift['isNight'])
         if(results_shift['isNight']):
@@ -265,6 +284,31 @@ def add_location(user_id, user_location, user_date, user_time):
                 # in_time_in_hours = resultspast['in_time'].total_seconds() / 3600
                 if resultspast is None:
                     print("in today")
+                    schedule_in = datetime.strptime(str(shiftin), "%H:%M:%S")
+                    time_in = datetime.strptime(user_time, "%H:%M:%S:%f")
+                    grace_period = results_shift['late_mark_after']
+                    if time_in > schedule_in:
+                        late_time = time_in - (schedule_in + grace_period)
+                        print(f"Late by: {late_time}")
+                    else:
+                        print("On time!")
+                        late_time = timedelta(0)  # Represent no lateness
+                    sql_query = """
+                    INSERT INTO attendances (worker_id, in_location_id, date, in_time, late_time, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """
+                    values = (user_id, user_location, user_date, user_time, late_time, timestamp)
+                    cursor.execute(sql_query, values)
+                    db.commit()
+
+                    if cursor.rowcount > 0:
+                        query_data = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s'
+                        cursor.execute(query_data, (user_date,user_id, user_location))
+                        result_data = cursor.fetchone()
+
+                        return serialize_response(True, "I", result_data)
+                    else:
+                        return serialize_response(False, "E", [])
                 else:
 
 
@@ -353,7 +397,7 @@ def add_location(user_id, user_location, user_date, user_time):
                         # in today
                         print("in today")
             else:
-                print(results)
+                print("hello")
                 # print(out_time_in_hours)
             # if(len(results) == 0):
             #     query_past = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date_out = %s AND date = %s AND worker_id = %s AND in_location_id = %s AND out_location_id = %s'
@@ -1067,6 +1111,30 @@ def get_pin():
         except Exception as e:
             return jsonify({'error': str(e)})
 
+
+@app.route('/get_userinfo_qr', methods=['POST', 'OPTIONS'])
+def get_userinfo_qr():
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            ID_data = data['ID']
+            date = data['date']
+            fingerprints_data = get_user_from_database_qr(ID_data);
+            user_location = data['user_location']
+            user_time = data['user_time']
+            all_location = add_location(ID_data, user_location, date, user_time);
+            logstoday = getLogs( ID_data, date)
+            # print(logstoday)
+            return jsonify({ "user_info" : fingerprints_data, "logs": logstoday, "in_out" : all_location })
+        except Exception as e:
+            return jsonify({'error': str(e)})
+    
 
 
 if __name__ == '__main__':
