@@ -212,7 +212,7 @@ def get_locations(pin):
     cursor = db.cursor(dictionary=True)
     query = 'SELECT id, name address FROM areas WHERE ip_address = %s'
     cursor.execute(query, (pin,))
-    results = cursor.fetchall()
+    results = cursor.fetchone()
     if results:
         data = results
     return data
@@ -1126,7 +1126,10 @@ def get_userinfo_qr():
             ID_data = data['ID']
             date = data['date']
             fingerprints_data = get_user_from_database_qr(ID_data);
-            user_location = data['user_location']
+            UUID_data = data['UUID']
+            location = get_locations(UUID_data)
+            print(location)
+            user_location = location["id"]
             user_time = data['user_time']
             all_location = add_location(ID_data, user_location, date, user_time);
             logstoday = getLogs( ID_data, date)
