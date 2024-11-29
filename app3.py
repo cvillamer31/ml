@@ -158,7 +158,8 @@ def get_user_from_database_qr(pin):
             'id': results[0]['id'],
             'name': results[0]['name'],
             'email': results[0]['email'],
-            'image': results[0]['image']
+            'image': results[0]['image'],
+            'emp_no': results[0]['emp_no'],
         }
         return fingerprints
     else:
@@ -1130,7 +1131,7 @@ def get_userinfo_qr():
             fingerprints_data = get_user_from_database_qr(ID_data);
             UUID_data = data['UUID']
             location = get_locations(UUID_data)
-            print(location)
+            print(UUID_data)
             user_location = location["id"]
             user_time = data['user_time']
             all_location = add_location(ID_data, user_location, date, user_time);
