@@ -1142,9 +1142,9 @@ def get_userinfo_qr():
             UUID_data = data['UUID']
             print(UUID_data)
             location = get_locations(UUID_data)
-            print(len(location))
-            if(len(location)):
-                return jsonify({ "user_info" : fingerprints_data, "logs": { "valid": "E", "Message": "The Device is Not registered in MIS Please Contact MIS to register the device."}, "in_out" : [] })
+            print(location)
+            if(location == None):
+                return jsonify({ "user_info" : fingerprints_data, "logs": [], "in_out" : { "valid": "E", "Message": "The Device is Not registered in MIS Please Contact MIS to register the device."} })
 
             user_location = location["id"]
             user_time = data['user_time']
