@@ -224,6 +224,8 @@ def get_locations(pin):
     results = cursor.fetchone()
     if results:
         data = results
+    else:
+        data = None
     return data
 
 def serialize_response(valid, message, data):
@@ -1138,8 +1140,12 @@ def get_userinfo_qr():
             date = data['date']
             fingerprints_data = get_user_from_database_qr(ID_data);
             UUID_data = data['UUID']
-            location = get_locations(UUID_data)
             print(UUID_data)
+            location = get_locations(UUID_data)
+            print(len(location))
+            if(len(location)):
+                return jsonify({ "user_info" : fingerprints_data, "logs": { "valid": "E", "Message": "The Device is Not registered in MIS Please Contact MIS to register the device."}, "in_out" : [] })
+
             user_location = location["id"]
             user_time = data['user_time']
             all_location = add_location(ID_data, user_location, date, user_time);
