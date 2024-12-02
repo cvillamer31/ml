@@ -149,7 +149,12 @@ def get_user_from_database_qr(pin):
     # cursor = db.cursor()
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
-    query = 'SELECT * FROM users WHERE id = %s'
+    # query = 'SELECT * FROM users WHERE id = %s'
+    query = """
+        SELECT users.*, affiliates.name AS CO_NAME, affiliates.logo AS CO_LOGO, affiliates.color AS CO_COLOR FROM users 
+        LEFT JOIN affiliates on affiliates.id = users.affiliate
+        WHERE users.id = %s
+    """
     cursor.execute(query, (pin,))
     results = cursor.fetchall()
 
@@ -160,6 +165,9 @@ def get_user_from_database_qr(pin):
             'email': results[0]['email'],
             'image': results[0]['image'],
             'emp_no': results[0]['emp_no'],
+            'company': results[0]['CO_NAME'],
+            'company_logo': results[0]['CO_LOGO'],
+            'company_color': results[0]['CO_COLOR'],
         }
         return fingerprints
     else:
