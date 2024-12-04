@@ -944,9 +944,9 @@ def compare():
             fingerprint2 = fingerprints_data[3]
             fingerprint3 = fingerprints_data[4]
             fingerprint4 = fingerprints_data[5]
-            fingerprint5 = fingerprints_data[6]
+            # fingerprint5 = fingerprints_data[6]
             # print(fingerprint4)
-            base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
+            base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4]
 
             theresult = finger_print_verify(biometrics_capture, base64_strings)
             # print(theresult)
@@ -986,9 +986,9 @@ def compare_all():
                     fingerprint2 = fingerprints_data[3]
                     fingerprint3 = fingerprints_data[4]
                     fingerprint4 = fingerprints_data[5]
-                    fingerprint5 = fingerprints_data[6]
+                    # fingerprint5 = fingerprints_data[6]
 
-                    base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4, fingerprint5]
+                    base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4]
                     theresult = finger_print_verify(biometrics_capture, base64_strings)
                     
                     if(theresult):
