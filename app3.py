@@ -387,7 +387,7 @@ def add_location(user_id, user_location, user_date, user_time):
                             early_out = timedelta(0)  # Represent no early out
 
                         sql_query = """
-                            UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, early_out_time = %s, work_hour = %s  WHERE id = %s
+                            UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, early_out_time = %s, work_hour = %s, isSentToHCS_out = 0  WHERE id = %s
                         """
                         values = (user_location, user_time, user_date, timestamp, early_out, work_duration, id_attendance)
                         cursor.execute(sql_query, values)
@@ -521,7 +521,7 @@ def add_location(user_id, user_location, user_date, user_time):
                     print("No early out!")
                     early_out = timedelta(0)  # Represent no early out
                 sql_query = """
-                    UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, early_out_time = %s, work_hour = %s  WHERE id = %s
+                    UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, early_out_time = %s, work_hour = %s, isSentToHCS_out = 0  WHERE id = %s
                 """
                 values = (user_location, user_time, user_date, timestamp, early_out, work_duration, id_attendance)
                 cursor.execute(sql_query, values)
@@ -629,7 +629,7 @@ def add_location_orig(user_id, user_location, user_date, user_time):
                 print("No early out!")
                 early_out = timedelta(0)  # Represent no early out
             sql_query = """
-                UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, early_out_time = %s, work_hour = %s  WHERE id = %s
+                UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, early_out_time = %s, work_hour = %s, isSentToHCS_out = 0  WHERE id = %s
             """
             values = (user_location, user_time, user_date, timestamp, early_out, work_duration, id_attendance)
             cursor.execute(sql_query, values)
