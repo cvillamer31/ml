@@ -58,7 +58,8 @@ app = Flask(__name__)
 # CORS(app, supports_credentials=False, max_age=86400)  # 86400 seconds = 1 day
 # CORS(app, resources={r"/compare": {"origins": "*", "methods": ["POST"]}})
 # CORS(app, resources={r"/get_userinfo": {"origins": "*", "methods": ["POST"]}})
-CORS(app, origins=["https://biometric.iteklabs.tech"])
+# CORS(app, origins=["https://biometric.iteklabs.tech"])
+CORS(app, origins=["https://biometric.iteklabs.tech", "https://bms.jakagroup.com"])
 app.config['CORS_HEADERS'] = 'application/json'
 
 from datetime import timedelta
@@ -920,6 +921,64 @@ def finger_print_verify(template, db_templates):
 
     return is_valid
 
+
+def add_location3(user_id, user_location, user_date, user_time):
+
+    try:
+        # Establish a connection to the database
+        db = get_db_connection()
+        # getting logs today
+        cursor = db.cursor(dictionary=True)
+        query = 'SELECT type_of_attendance, date, time, location_id FROM attendance2 WHERE date = %s AND user_id = %s AND location_id = %s '
+        cursor.execute(query, (user_date,user_id, user_location))
+        results = cursor.fetchall()
+        
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+
+        datepast = user_date
+        past_date = datetime.strptime(datepast, "%Y-%m-%d").date()  # Convert to date
+        datepast = past_date - timedelta(days=1)
+        # print(len(results))
+        if(len(results) > 0): 
+            # sql_query = """
+            # INSERT INTO attendance2 (user_id, location_id, date, time, type_of_attendance, created_at)
+            # VALUES (%s, %s, %s, %s, %s, %s)
+            # """
+            # values = (user_id, user_location, user_date, user_time, "O", timestamp)
+            # cursor.execute(sql_query, values)
+            # db.commit()
+
+            data_fix = []
+            
+            for i,a in enumerate(results): 
+                print(a["date"])
+                data_date = a["date"]
+                if (i%2==0):
+                    data_fix += { "date": data_date }
+                    # print("test")
+                elif (i%2==1) :
+                    data_fix += { "date":  a["date"]}
+                    # print(i)
+            print(data_fix[0])
+        else:
+
+            # sql_query = """
+            # INSERT INTO attendances (worker_id, location_id, date, time, type_of_attendance, created_at)
+            # VALUES (%s, %s, %s, %s, %s, %s)
+            # """
+            # values = (user_id, user_location, user_date, user_time, "I", timestamp)
+            # cursor.execute(sql_query, values)
+            # db.commit()
+            print(results)
+
+        return {"hello": "asdasd"} 
+    except mysql.connector.Error as err:
+        # Handle database errors
+        return f"Error: {err}"
+
+
+
 @app.route('/compare', methods=['POST', 'OPTIONS'])
 def compare():
 
@@ -1049,6 +1108,26 @@ def get_all_companies():
         except Exception as e:
             return jsonify({'error': str(e)})
         
+
+@app.route('/get_attendance3', methods=['POST', 'OPTIONS'])
+def get_attendance3():
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            user_id = data['user_id']
+            user_location = data['user_location']
+            user_date = data['user_date']
+            user_time = data['user_time']
+            all_location = add_location3(user_id, user_location, user_date, user_time);
+            return all_location
+        except Exception as e:
+            return jsonify({'error': str(e)})
 
 
 @app.route('/get_attendance', methods=['POST', 'OPTIONS'])
