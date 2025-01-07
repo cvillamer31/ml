@@ -1292,7 +1292,7 @@ def get_attendance3():
             user_location = data['user_location']
             user_date = data['user_date']
             user_time = data['user_time']
-            all_location = add_location3(user_id, user_location, user_date, user_time);
+            all_location = add_location3_last20250107(user_id, user_location, user_date, user_time);
             return all_location
         except Exception as e:
             return jsonify({'error': str(e)})
