@@ -202,7 +202,7 @@ def getLogs(id, date):
     try:
         db = get_db_connection()
         cursor = db.cursor(dictionary=True)
-        query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s ORDER BY in_time DESC LIMIT 1'
+        query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s '
         cursor.execute(query, (date,id,))
         results_data = cursor.fetchall()
         # print(results_data[0])
