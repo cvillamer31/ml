@@ -202,7 +202,7 @@ def getLogs(id, date):
     try:
         db = get_db_connection()
         cursor = db.cursor(dictionary=True)
-        query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s '
+        query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date = %s AND worker_id = %s'
         cursor.execute(query, (date,id,))
         results_data = cursor.fetchall()
         # print(results_data[0])
@@ -1044,7 +1044,7 @@ def add_location3(user_id, user_location, user_date, user_time):
         query = 'SELECT * FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s ORDER BY in_time DESC'
         cursor.execute(query, (user_date,user_id, user_location))
         results = cursor.fetchone()
-        print(results)
+        print(len(results))
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         datepast = user_date
@@ -1126,6 +1126,8 @@ def add_location3(user_id, user_location, user_date, user_time):
                     result_data = cursor.fetchone()
                     return serialize_response(True, "O", result_data)
                 elif len(str(results["in_time"] )) > 0  and len(str(results["out_time"])) > 0 :
+                    db = get_db_connection()
+                    cursor = db.cursor(dictionary=True)
                     sql_query = """
                     INSERT INTO attendances (worker_id, in_location_id, date, in_time, TypeOfTerminal_in, created_at)
                     VALUES (%s, %s, %s, %s, %s, %s)
