@@ -252,7 +252,7 @@ def serialize_response(valid, message, data):
 
 
 
-def add_location(user_id, user_location, user_date, user_time):
+def add_location3_last20250107(user_id, user_location, user_date, user_time):
 
     try:
         # Establish a connection to the database
@@ -1033,7 +1033,7 @@ def finger_print_verify(template, db_templates):
 #         return f"Error: {err}"
 
 
-def add_location3(user_id, user_location, user_date, user_time):
+def add_location(user_id, user_location, user_date, user_time):
 
     try:
         # Establish a connection to the database
