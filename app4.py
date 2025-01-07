@@ -921,117 +921,6 @@ def finger_print_verify(template, db_templates):
 
     return is_valid
 
-# def add_location3(user_id, user_location, user_date, user_time):
-
-#     try:
-#         # Establish a connection to the database
-#         db = get_db_connection()
-#         # getting logs today
-#         cursor = db.cursor(dictionary=True)
-#         # query = 'SELECT type_of_attendance, date, time, location_id FROM attendance2 WHERE date = %s AND user_id = %s AND location_id = %s '
-#         query = 'SELECT * FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s ORDER BY in_time DESC'
-#         cursor.execute(query, (user_date,user_id, user_location))
-#         results = cursor.fetchone()
-#         print(results)
-#         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-#         datepast = user_date
-#         past_date = datetime.strptime(datepast, "%Y-%m-%d").date()  # Convert to date
-#         datepast = past_date - timedelta(days=1)
-
-#         if results == None:
-#             query = 'SELECT * FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s ORDER BY in_time DESC'
-#             cursor.execute(query, (datepast,user_id, user_location))
-#             results1 = cursor.fetchone()
-#             print("putek")
-#             print(results1)
-#             if results1 == None:
-#                 db = get_db_connection()
-#                 cursor = db.cursor(dictionary=True)
-#                 sql_query = """
-#                     INSERT INTO attendances (worker_id, in_location_id, date, in_time, TypeOfTerminal_in, created_at)
-#                     VALUES (%s, %s, %s, %s, %s, %s)
-#                     """
-#                 values = (user_id, user_location, user_date, user_time, "PWF", timestamp)
-#                 cursor.execute(sql_query, values)
-#                 db.commit()
-#                 # print(cursor.lastrowid)
-#                 query_data = 'SELECT * FROM attendances WHERE id = %s'
-#                 cursor.execute(query_data, (cursor.lastrowid,))
-#                 result_data = cursor.fetchone()
-#                 return serialize_response(True, "I", result_data)
-#             else:
-#                 if len(str(results1["in_time"] )) > 0  and results1["out_time"] == None:
-                        
-#                         #out-today
-#                         db = get_db_connection()
-#                         cursor = db.cursor(dictionary=True)
-#                         sql_query = """
-#                             UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, isSentToHCS_out = 0, TypeOfTerminal_out = 'PWF'  WHERE id = %s
-#                         """
-#                         values = (user_location, user_time, user_date, timestamp, results1["id"])
-#                         # print(values)
-#                         cursor.execute(sql_query, values)
-#                         db.commit()
-
-#                         query_data = 'SELECT * FROM attendances WHERE id = %s'
-#                         cursor.execute(query_data, (results1["id"],))
-#                         result_data = cursor.fetchone()
-#                         return serialize_response(True, "O", result_data)
-#                 else:
-#                     print("andito")
-#                     db = get_db_connection()
-#                     cursor = db.cursor(dictionary=True)
-#                     sql_query = """
-#                         INSERT INTO attendances (worker_id, in_location_id, date, in_time, TypeOfTerminal_in, created_at)
-#                         VALUES (%s, %s, %s, %s, %s, %s)
-#                         """
-#                     values = (user_id, user_location, user_date, user_time, "PWF", timestamp)
-#                     cursor.execute(sql_query, values)
-#                     db.commit()
-#                     # print(cursor.lastrowid)
-#                     query_data = 'SELECT * FROM attendances WHERE id = %s'
-#                     cursor.execute(query_data, (cursor.lastrowid,))
-#                     result_data = cursor.fetchone()
-#                     return serialize_response(True, "I", result_data)
-#         else : 
-#             if len(results) > 0 : 
-#                 # print(len(str(results["in_time"] )))
-#                 if len(str(results["in_time"] )) > 0  and results["out_time"] == None:
-#                     #out-today
-#                     db = get_db_connection()
-#                     cursor = db.cursor(dictionary=True)
-#                     sql_query = """
-#                         UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, isSentToHCS_out = 0, TypeOfTerminal_out = 'PWF'  WHERE id = %s
-#                     """
-#                     values = (user_location, user_time, user_date, timestamp, results["id"])
-#                     print(values)
-#                     cursor.execute(sql_query, values)
-#                     db.commit()
-
-#                     query_data = 'SELECT * FROM attendances WHERE id = %s'
-#                     cursor.execute(query_data, (results["id"],))
-#                     result_data = cursor.fetchone()
-#                     return serialize_response(True, "O", result_data)
-#                 elif len(str(results["in_time"] )) > 0  and len(str(results["out_time"])) > 0 :
-#                     sql_query = """
-#                     INSERT INTO attendances (worker_id, in_location_id, date, in_time, TypeOfTerminal_in, created_at)
-#                     VALUES (%s, %s, %s, %s, %s, %s)
-#                     """
-#                     values = (user_id, user_location, user_date, user_time, "PWF", timestamp)
-#                     cursor.execute(sql_query, values)
-#                     db.commit()
-#                     # print(cursor.lastrowid)
-#                     query_data = 'SELECT * FROM attendances WHERE id = %s'
-#                     cursor.execute(query_data, (cursor.lastrowid,))
-#                     result_data = cursor.fetchone()
-#                     return serialize_response(True, "I", result_data)
-            
-#         # return {"hello": "asdasd"} 
-#     except mysql.connector.Error as err:
-#         # Handle database errors
-#         return f"Error: {err}"
-
 
 def add_location3(user_id, user_location, user_date, user_time):
 
@@ -1143,6 +1032,7 @@ def add_location3(user_id, user_location, user_date, user_time):
     except mysql.connector.Error as err:
         # Handle database errors
         return f"Error: {err}"
+
 
 
 @app.route('/compare', methods=['POST', 'OPTIONS'])
