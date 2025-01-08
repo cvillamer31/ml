@@ -229,6 +229,19 @@ def get_locations(pin):
         data = None
     return data
 
+
+def get_locations_QR(pin):
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    query = 'SELECT id, name address FROM areas WHERE uid_data = %s'
+    cursor.execute(query, (pin,))
+    results = cursor.fetchone()
+    if results:
+        data = results
+    else:
+        data = None
+    return data
+
 def serialize_response(valid, message, data):
     """Serialize datetime and timedelta objects for JSON."""
     # print(data)
@@ -1388,7 +1401,7 @@ def get_userinfo_qr():
             fingerprints_data = get_user_from_database_qr(ID_data);
             UUID_data = data['UUID']
             print(UUID_data)
-            location = get_locations(UUID_data)
+            location = get_locations_QR(UUID_data)
             print(location)
             if(location == None):
                 return jsonify({ "user_info" : fingerprints_data, "logs": [], "in_out" : { "valid": "E", "Message": "This device is not registered in MIS. Please contact the MIS team to register the device. Copy the following UID: <b>" + UUID_data + "</b> and send it to MIS for assistance."} })
