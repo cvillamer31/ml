@@ -1046,7 +1046,7 @@ def finger_print_verify(template, db_templates):
 #         return f"Error: {err}"
 
 
-def add_location(user_id, user_location, user_date, user_time):
+def add_location(user_id, user_location, user_date, user_time, typeTerminal):
 
     try:
         # Establish a connection to the database
@@ -1057,7 +1057,7 @@ def add_location(user_id, user_location, user_date, user_time):
         query = 'SELECT * FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s ORDER BY in_time DESC'
         cursor.execute(query, (user_date,user_id, user_location))
         results = cursor.fetchone()
-        print(len(results))
+        # print(len(results))
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         datepast = user_date
@@ -1077,7 +1077,7 @@ def add_location(user_id, user_location, user_date, user_time):
                     INSERT INTO attendances (worker_id, in_location_id, date, in_time, TypeOfTerminal_in, created_at)
                     VALUES (%s, %s, %s, %s, %s, %s)
                     """
-                values = (user_id, user_location, user_date, user_time, "PWF", timestamp)
+                values = (user_id, user_location, user_date, user_time, typeTerminal, timestamp)
                 cursor.execute(sql_query, values)
                 db.commit()
                 # print(cursor.lastrowid)
@@ -1092,9 +1092,9 @@ def add_location(user_id, user_location, user_date, user_time):
                         db = get_db_connection()
                         cursor = db.cursor(dictionary=True)
                         sql_query = """
-                            UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, isSentToHCS_out = 0, TypeOfTerminal_out = 'PWF'  WHERE id = %s
+                            UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, isSentToHCS_out = 0, TypeOfTerminal_out = %s  WHERE id = %s
                         """
-                        values = (user_location, user_time, user_date, timestamp, results1["id"])
+                        values = (user_location, user_time, user_date, timestamp, typeTerminal, results1["id"])
                         # print(values)
                         cursor.execute(sql_query, values)
                         db.commit()
@@ -1111,7 +1111,7 @@ def add_location(user_id, user_location, user_date, user_time):
                         INSERT INTO attendances (worker_id, in_location_id, date, in_time, TypeOfTerminal_in, created_at)
                         VALUES (%s, %s, %s, %s, %s, %s)
                         """
-                    values = (user_id, user_location, user_date, user_time, "PWF", timestamp)
+                    values = (user_id, user_location, user_date, user_time, typeTerminal, timestamp)
                     cursor.execute(sql_query, values)
                     db.commit()
                     # print(cursor.lastrowid)
@@ -1127,9 +1127,9 @@ def add_location(user_id, user_location, user_date, user_time):
                     db = get_db_connection()
                     cursor = db.cursor(dictionary=True)
                     sql_query = """
-                        UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, isSentToHCS_out = 0, TypeOfTerminal_out = 'PWF'  WHERE id = %s
+                        UPDATE attendances SET out_location_id = %s, out_time = %s, date_out = %s, updated_at = %s, isSentToHCS_out = 0, TypeOfTerminal_out = %s  WHERE id = %s
                     """
-                    values = (user_location, user_time, user_date, timestamp, results["id"])
+                    values = (user_location, user_time, user_date, timestamp, typeTerminal, results["id"])
                     print(values)
                     cursor.execute(sql_query, values)
                     db.commit()
@@ -1145,7 +1145,7 @@ def add_location(user_id, user_location, user_date, user_time):
                     INSERT INTO attendances (worker_id, in_location_id, date, in_time, TypeOfTerminal_in, created_at)
                     VALUES (%s, %s, %s, %s, %s, %s)
                     """
-                    values = (user_id, user_location, user_date, user_time, "PWF", timestamp)
+                    values = (user_id, user_location, user_date, user_time, typeTerminal, timestamp)
                     cursor.execute(sql_query, values)
                     db.commit()
                     # print(cursor.lastrowid)
@@ -1234,7 +1234,7 @@ def compare_all():
                     if(theresult):
                         print(str(a['id']) + " <> " + a['PIN'] + " <> " + str(theresult))
                         fingerprints_data = get_user_from_database(a['PIN'] );
-                        all_location = add_location(fingerprints_data['id'], user_location, user_date, user_time);
+                        all_location = add_location(fingerprints_data['id'], user_location, user_date, user_time, "FO");
                         break
 
 
@@ -1326,7 +1326,7 @@ def get_attendance():
             user_location = data['user_location']
             user_date = data['user_date']
             user_time = data['user_time']
-            all_location = add_location(user_id, user_location, user_date, user_time);
+            all_location = add_location(user_id, user_location, user_date, user_time, "PWF");
             # all_location2 = add_location2(user_id, user_location, user_date, user_time);
             return all_location
         except Exception as e:
@@ -1408,7 +1408,7 @@ def get_userinfo_qr():
 
             user_location = location["id"]
             user_time = data['user_time']
-            all_location = add_location(ID_data, user_location, date, user_time);
+            all_location = add_location(ID_data, user_location, date, user_time, "QR");
             logstoday = getLogs( ID_data, date)
             # print(logstoday)
             return jsonify({ "user_info" : fingerprints_data, "logs": logstoday, "in_out" : all_location })
