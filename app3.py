@@ -1187,9 +1187,11 @@ def compare():
             # fingerprint5 = fingerprints_data[6]
             # print(fingerprint4)
             base64_strings = [fingerprint1, fingerprint2, fingerprint3, fingerprint4]
-
+            if fingerprint1 == None:
+                return jsonify({'valid': False, 'message': "No Fingerprint Data Please Contact SIGMA HR for registration." }), 200
+            # print(base64_strings)
             theresult = finger_print_verify(biometrics_capture, base64_strings)
-            # print(theresult)
+            
             if(theresult):
                 return jsonify({'valid': theresult, 'message': "Fingerprint Match" }), 200
             else:
