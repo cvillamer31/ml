@@ -59,7 +59,7 @@ app = Flask(__name__)
 # CORS(app, resources={r"/compare": {"origins": "*", "methods": ["POST"]}})
 # CORS(app, resources={r"/get_userinfo": {"origins": "*", "methods": ["POST"]}})
 # CORS(app, origins=["https://biometric.iteklabs.tech"])
-CORS(app, origins=["https://biometric.iteklabs.tech", "https://bms.jakagroup.com"])
+CORS(app, origins=["https://biometric.iteklabs.tech", "https://bms.jakagroup.com", "http://localdata.com/"])
 app.config['CORS_HEADERS'] = 'application/json'
 
 from datetime import timedelta
