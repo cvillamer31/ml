@@ -1598,7 +1598,7 @@ def get_attendance4():
             user_location = data['user_location']
             user_date = data['user_date']
             user_time = data['user_time']
-            all_location = add_location4(user_id, user_location, user_date, user_time);
+            all_location = add_location4(user_id, user_location, user_date, user_time, "PWF");
             return all_location
         except Exception as e:
             return jsonify({'error': str(e)})
