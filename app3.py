@@ -1159,6 +1159,30 @@ def add_location(user_id, user_location, user_date, user_time, typeTerminal):
         # Handle database errors
         return f"Error: {err}"
 
+def getLogs2(id, date):
+    try:
+        datepast = date
+        past_date = datetime.strptime(datepast, "%Y-%m-%d").date()  # Convert to date
+        datepast = past_date - timedelta(days=1)
+
+
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+        query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date BETWEEN %s AND %s AND worker_id = %s ORDER BY date DESC'
+        cursor.execute(query, (datepast, date,id,))
+        results_data = cursor.fetchall()
+        print(results_data)
+        if(len(results_data) > 0):
+            results_data= serialize_response("True", "Found", results_data)
+        else:
+            results_data= {"valid": "False", "message": "Not Found", "data": []}
+        # print(results_data)
+        return results_data
+    except mysql.connector.Error as err:
+        # Handle database errors
+        return f"Error: {err}"
+
+
 
 @app.route('/compare', methods=['POST', 'OPTIONS'])
 def compare():
@@ -1417,6 +1441,29 @@ def get_userinfo_qr():
         except Exception as e:
             return jsonify({'error': str(e)})
     
+
+
+@app.route('/get_userinfo2', methods=['POST', 'OPTIONS'])
+def get_userinfo2():
+    if request.method == 'OPTIONS':
+        response = jsonify({"status": "OK"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        return response, 200
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            pin = data['PIN']
+            date = data['date']
+            fingerprints_data = get_user_from_database("08-"+pin);
+            logstoday = getLogs2( fingerprints_data['id'], date)
+            # print(logstoday)
+            return jsonify({ "user_info" : fingerprints_data, "logs": logstoday })
+        except Exception as e:
+            return jsonify({'error': str(e)})
+    
+
 
 
 if __name__ == '__main__':
