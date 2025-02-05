@@ -1168,7 +1168,7 @@ def getLogs2(id, date):
 
         db = get_db_connection()
         cursor = db.cursor(dictionary=True)
-        query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date BETWEEN %s AND %s AND worker_id = %s ORDER BY date DESC'
+        query = 'SELECT id, date, date_out, in_time, out_time FROM attendances WHERE date BETWEEN %s AND %s AND worker_id = %s ORDER BY id DESC'
         cursor.execute(query, (datepast, date,id,))
         results_data = cursor.fetchall()
         print(results_data)
