@@ -142,7 +142,8 @@ def get_user_from_database(pin):
                 'id': results[0]['id'],
                 'name': results[0]['name'],
                 'email': results[0]['email'],
-                'image': results[0]['image']
+                'image': results[0]['image'],
+                'type_show' : 'FG'
             }
             return fingerprints
         else:
@@ -158,7 +159,8 @@ def get_user_from_database(pin):
                 'id': results[0]['id'],
                 'name': results[0]['name'],
                 'email': results[0]['email'],
-                'image': results[0]['image']
+                'image': results[0]['image'],
+                'type_show' : 'QR'
             }
             return fingerprints
         else:
