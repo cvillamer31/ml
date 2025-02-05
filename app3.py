@@ -134,37 +134,17 @@ def get_user_from_database(pin):
     query = 'SELECT * FROM users WHERE pin = %s'
     cursor.execute(query, (pin,))
     results = cursor.fetchall()
-    print(len(results))
-    if len(results) > 0 :
 
-        if results:
-            fingerprints = {
-                'id': results[0]['id'],
-                'name': results[0]['name'],
-                'email': results[0]['email'],
-                'image': results[0]['image'],
-                'type_show' : 'FG'
-            }
-            return fingerprints
-        else:
-            raise Exception("User not found")
+    if results:
+        fingerprints = {
+            'id': results[0]['id'],
+            'name': results[0]['name'],
+            'email': results[0]['email'],
+            'image': results[0]['image']
+        }
+        return fingerprints
     else:
-        data_num = pin.split("-")
-        query = 'SELECT * FROM users WHERE id = %s'
-        cursor.execute(query, (data_num[1],))
-        results = cursor.fetchall()
-        # print(data_num[1])
-        if results:
-            fingerprints = {
-                'id': results[0]['id'],
-                'name': results[0]['name'],
-                'email': results[0]['email'],
-                'image': results[0]['image'],
-                'type_show' : 'QR'
-            }
-            return fingerprints
-        else:
-            raise Exception("User not found")
+        raise Exception("User not found")
     
 def get_user_from_database_qr(pin):
     # cursor = db.cursor()
@@ -1494,7 +1474,7 @@ def add_location4(user_id, user_location, user_date, user_time, typeTerminal):
         query = 'SELECT * FROM attendances WHERE date = %s AND worker_id = %s AND in_location_id = %s ORDER BY in_time DESC'
         cursor.execute(query, (user_date,user_id, user_location))
         results = cursor.fetchone()
-        print(len(results))
+        # print(len(results))
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         datepast = user_date
